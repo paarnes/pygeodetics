@@ -24,21 +24,16 @@ Usage Example:
     # Create an instance of the TransverseMercator class
     tm = TransverseMercator(lat_origin, lon_origin, scale_factor, false_easting, false_northing, a, f)
 
-    # Example geographic coordinates (latitude, longitude in radians)
-    lat = math.radians(60.0)  # Latitude in radians
-    lon = math.radians(3.0)  # Longitude in radians
+    # Example geographic coordinates (longitude, latidtude in degrees) (Order: [[x1,y2], [x2,y2]...[xn,yn]])
+    coords = np.array([[3.44958679, 60.83740565], [3.52343265, 61.43578934]])
 
-    # Perform forward projection
-    easting, northing = tm.forward(lat, lon)
-    print(f"Projected Coordinates:\nEasting = {round(easting,4)}\nNorthing = {round(northing,4)}")
+    # Get projected coordinates from the latitude and longitude
+    easting, northing = tm.geog_to_projected(coords, unit="deg")
 
-    # Perform inverse projection
-    lat_back, lon_back = tm.inverse(easting, northing)
-    print(f"Geographic Coordinates: Latitude = {math.degrees(lat_back)}, Longitude = {math.degrees(lon_back)}")
 """
 
 import numpy as np
-from typing import Tuple
+from typing import Tuple, Literal, Union, List
 
 
 class TransverseMercator:
@@ -53,6 +48,39 @@ class TransverseMercator:
     - false_northing (float): False northing.
     - a (float): Semi-major axis of the ellipsoid.
     - f (float): Flattening of the ellipsoid.
+
+    Note:
+    -----
+    Order of input coordinates: First longitude (x), then latitude (y).
+        - [[x1,y2], [x2,y2]...[xn,yn]]
+        - [[lon1,lat1], [lon2,lat2]...[lonn,latn]]
+        - [[east1,north1], [east2,north2]...[eastn,northn]]
+
+    Example:
+    --------
+    .. code-block:: python
+
+            # Define projection parameters
+            lat_origin = 0              # Latitude of natural origin in radians
+            lon_origin = np.radians(9)  # Longitude of natural origin in radians
+            scale_factor = 0.9996       # Scale factor at the natural origin
+            false_easting = 500000      # False easting in meters
+            false_northing = 0          # False northing in meters
+
+            # Ellipsoid parameters (WGS84)
+            a = 6378137.0               # Semi-major axis in meters
+            f = 1 / 298.257223563       # Flattening
+
+            # Create an instance of the TransverseMercator class
+            tm = TransverseMercator(lat_origin, lon_origin, scale_factor, false_easting, false_northing, a, f)
+
+            # Example geographic coordinates (longitude, latidtude in degrees) (Order: [[x1,y2], [x2,y2]...[xn,yn]])
+            coords = np.array([[3.44958679, 60.83740565], [3.52343265, 61.43578934]])
+
+            # Get projected coordinates from the latitude and longitude
+            easting, northing = tm.geog_to_projected(coords, unit="deg")
+
+
     """
 
     def __init__(self, lat_origin, lon_origin, scale_factor, false_easting, false_northing, a, f):
@@ -145,29 +173,59 @@ class TransverseMercator:
 
         return M0
 
-    def calculate_xi_eta_pole_safe(self, eta0, xi0) -> Tuple[float, float]:
-        # Compute full xi and eta
-        xi = xi0
-        eta = eta0
+    def calculate_xi_eta(self, eta0, xi0) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Compute full xi and eta using the series expansion for an array of inputs.
+
+        Args:
+        - eta0 (np.ndarray): Initial eta values.
+        - xi0 (np.ndarray): Initial xi values.
+
+        Returns:
+        - Tuple[np.ndarray, np.ndarray]: Full xi and eta values.
+        """
+        xi = xi0.copy()
+        eta = eta0.copy()
         for i in range(1, 5):
             xi += self.h_coeffs[f"h{i}"] * np.sin(2 * i * xi0) * np.cosh(2 * i * eta0)
             eta += self.h_coeffs[f"h{i}"] * np.cos(2 * i * xi0) * np.sinh(2 * i * eta0)
         return xi, eta
 
-    def geog_to_projected(self, lat, lon, radians=False):
+    def convert_to_np_array(self, coords: Union[List[List[float]], np.ndarray]):
         """
-        Convert geographic coordinates (latitude, longitude) to projected coordinates (easting, northing).
+        Convert input list of lists or NumPy array to a NumPy array if not already one.
+        """
+        if isinstance(coords, list):
+            return np.array(coords)
+        elif isinstance(coords, np.ndarray):
+            return coords
+        else:
+            raise TypeError("Input coordinates must be a list of lists or a NumPy array.")
+
+    def geog_to_projected(self, coordinates: np.ndarray, unit: Literal["deg", "rad"]="deg") -> np.ndarray:
+        """
+        Convert geographic coordinates (longitude, latitude) to projected coordinates (easting, northing).
+
+        Note: The order must be first longitude (x), then latitude (y).
 
         Args:
-        - lat (float): Latitude in radians.
-        - lon (float): Longitude in radians.
+        - coordinates (np.ndarray): Array of shape (n, 2) or (n, 3) containing longitude and latitude in degrees or radians.
+        - unit (str): The unit of the input coordinates. Either "deg" or "rad".
 
         Returns:
-        - (float, float): Easting (E) and Northing (N).
+        - np.ndarray: Array of shape (n, 2) containing Easting (E) and Northing (N).
         """
-        if radians is False:
-            lat = np.deg2rad(lat)
-            lon = np.deg2rad(lon)
+        coordinates = self.convert_to_np_array(coordinates)
+
+        if coordinates.shape[1] not in [2, 3]:
+            raise ValueError("Input coordinates must have shape (n, 2) or (n, 3)")
+
+        lon, lat = coordinates[:, 0], coordinates[:, 1]
+
+        if unit == "deg":
+            lat = np.radians(lat)
+            lon = np.radians(lon)
+
         # First, calculate Q and beta
         e2 = self.f * (2 - self.f)
         e = np.sqrt(e2)
@@ -179,7 +237,7 @@ class TransverseMercator:
         xi0 = np.arcsin(np.sin(beta) * np.cosh(eta0))
 
         # Compute full xi and eta
-        xi, eta = self.calculate_xi_eta_pole_safe(eta0, xi0)
+        xi, eta = self.calculate_xi_eta(eta0, xi0)
 
         # Compute M0 (Meridional Arc at Origin)
         if self.close_to_poles:
@@ -191,19 +249,27 @@ class TransverseMercator:
         E = self.false_easting + self.scale_factor * self.B * eta
         N = self.false_northing + self.scale_factor * (self.B * xi - M0)
 
-        return E, N
+        return np.vstack([E, N])
 
-    def projected_to_geog(self, E, N):
+    def projected_to_geog(self, proj_coordinates: np.ndarray, unit: Literal["deg", "rad"]="deg"):
         """
-        Convert projected coordinates (easting, northing) back to geographic coordinates (latitude, longitude).
+        Convert a numpy array with projected coordinates (easting, northing) back to geographic coordinates (longitude, latitude).
 
         Args:
-        - E (float): Easting.
-        - N (float): Northing.
+        - E (float or np.ndarray): Easting(s).
+        - N (float or np.ndarray): Northing(s).
 
         Returns:
-        - (float, float): Latitude (lat) and Longitude (lon) in radians.
+        - (np.ndarray, np.ndarray): Latitude(s) and Longitude(s) in radians.
         """
+        coordinates = self.convert_to_np_array(proj_coordinates)
+
+        if coordinates.shape[1] not in [2, 3]:
+            raise ValueError("Input coordinates must have shape (n, 2) or (n, 3)")
+
+        E, N = coordinates[:, 0], coordinates[:, 1]
+
+
         h_prime_coeffs = {
             "h1": self.n / 2 - (2 / 3) * self.n**2 + (37 / 96) * self.n**3 - (1 / 360) * self.n**4,
             "h2": (1 / 48) * self.n**2 + (1 / 15) * self.n**3 - (437 / 1440) * self.n**4,
@@ -239,7 +305,12 @@ class TransverseMercator:
         lat = np.arctan(np.sinh(Q_double_prime))
         lon = self.lon_origin + np.arcsin(np.tanh(eta0_prime) / np.cos(beta_prime))
 
-        return lat, lon
+        geog_coords = np.vstack([E, N])
+
+        if unit == "deg":
+            geog_coords = np.rad2deg(geog_coords)
+
+        return geog_coords
 
 
 if __name__ == "__main__":
@@ -261,20 +332,28 @@ if __name__ == "__main__":
     tm = TransverseMercator(lat_origin, lon_origin, scale_factor, false_easting, false_northing, a, f)
 
     # Example geographic coordinates (latitude, longitude in radians)
-    lat = np.radians(60.0)  # Latitude in radians
-    lon = np.radians(3.0)  # Longitude in radians
+    lat = np.radians([60.0, 60.1, 60.2])  # Latitude in radians
+    lon = np.radians([3.0, 3.1, 3.2])  # Longitude in radians
 
-    # lat = np.array([60,60.1,60.2, 60.3, 60.4, 60.5, 60.6, 60.7, 60.8, 60.9])
-    # lon = np.array([3,3.1,3.2,3.3,3.4,3.5,3.6,3.7,3.8,3.9])
+    coords = np.array([[3, 60], [3.2, 61]])
+    # coords = [[3, 60], [3.2, 61]] # list of lists
+
     # Perform forward projection
-    easting, northing = tm.geog_to_projected(lat, lon, radians=False)
-    easting_true, northing_true = Transformer.from_crs("EPSG:4326", "EPSG:32632", always_xy=True).transform(lon, lat)
-    print(f"Projected Coordinates:\nEasting = {np.round(easting, 4)}\nNorthing = {np.round(northing, 4)}")
-    print(f"\nProjected Coordinates Pyproj:\nEasting = {np.round(easting_true, 4)}\nNorthing = {np.round(northing_true, 4)}")
+    easting, northing = tm.geog_to_projected(coords, unit="deg")
+    results = np.vstack((easting, northing)).T
+    print(f"\nProjected Coordinates TM class:\n{results}")
 
     # # Perform inverse projection
-    # lat_back, lon_back = tm.projected_to_geog(easting, northing)
-    # print(f"Geographic Coordinates: Latitude = {np.degrees(lat_back)}, Longitude = {np.degrees(lon_back)}")
+    proj_coordinates = np.vstack([easting, northing]).T
+    lat_back, lon_back = tm.projected_to_geog(proj_coordinates, unit="deg")
+    print(f"\nGeographic Coordinates:\nLatitude: {np.degrees(lat_back)}\nLongitude: {np.degrees(lon_back)}")
+
+    # # Test using Pyproj
+    # easting_true, northing_true = Transformer.from_crs("EPSG:4326", "EPSG:32632", always_xy=True).transform(coords[:, 0], coords[:, 1])
+    # results_pyproj = np.vstack((easting_true, northing_true)).T
+    # print(f"\nProjected Coordinates Pyproj:\n{results_pyproj}")
+
+
 
 
 
