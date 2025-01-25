@@ -251,25 +251,25 @@ class TransverseMercator:
 
         return np.vstack([E, N])
 
-    def projected_to_geog(self, proj_coordinates: np.ndarray, unit: Literal["deg", "rad"]="deg"):
+    def projected_to_geog(self, proj_coordinates: np.ndarray, unit: Literal["deg", "rad"] = "deg") -> np.ndarray:
         """
-        Convert a numpy array with projected coordinates (easting, northing) back to geographic coordinates (longitude, latitude).
+        Convert projected coordinates (easting, northing) to geographic coordinates (longitude, latitude).
 
         Args:
-        - E (float or np.ndarray): Easting(s).
-        - N (float or np.ndarray): Northing(s).
+        - proj_coordinates (np.ndarray): Array of shape (n, 2) containing easting and northing coordinates.
+        - unit (str): The desired output unit. Either "deg" (degrees) or "rad" (radians).
 
         Returns:
-        - (np.ndarray, np.ndarray): Latitude(s) and Longitude(s) in radians.
+        - np.ndarray: Array of shape (n, 2) containing longitude and latitude in the specified unit.
         """
-        coordinates = self.convert_to_np_array(proj_coordinates)
+        proj_coordinates = self.convert_to_np_array(proj_coordinates)
 
-        if coordinates.shape[1] not in [2, 3]:
+        if proj_coordinates.shape[1] not in [2, 3]:
             raise ValueError("Input coordinates must have shape (n, 2) or (n, 3)")
 
-        E, N = coordinates[:, 0], coordinates[:, 1]
+        E, N = proj_coordinates[:, 0], proj_coordinates[:, 1]
 
-
+        # Define reverse series coefficients
         h_prime_coeffs = {
             "h1": self.n / 2 - (2 / 3) * self.n**2 + (37 / 96) * self.n**3 - (1 / 360) * self.n**4,
             "h2": (1 / 48) * self.n**2 + (1 / 15) * self.n**3 - (437 / 1440) * self.n**4,
@@ -277,40 +277,45 @@ class TransverseMercator:
             "h4": (4397 / 161280) * self.n**4
         }
 
+        # Compute eta_prime and xi_prime
         eta_prime = (E - self.false_easting) / (self.B * self.scale_factor)
         if self.close_to_poles:
             xi_prime = (N - self.false_northing + self.scale_factor * self._calculate_meridional_arc_pole_safe(self.lat_origin)) / (self.B * self.scale_factor)
         else:
             xi_prime = (N - self.false_northing + self.scale_factor * self._calculate_meridional_arc()) / (self.B * self.scale_factor)
 
-        xi0_prime = xi_prime
-        eta0_prime = eta_prime
-
+        # Backward series expansion for xi0_prime and eta0_prime
+        xi0_prime = xi_prime.copy()
+        eta0_prime = eta_prime.copy()
         for i in range(1, 5):
             xi0_prime -= h_prime_coeffs[f"h{i}"] * np.sin(2 * i * xi_prime) * np.cosh(2 * i * eta_prime)
             eta0_prime -= h_prime_coeffs[f"h{i}"] * np.cos(2 * i * xi_prime) * np.sinh(2 * i * eta_prime)
 
+        # Compute beta_prime and Q_prime
         beta_prime = np.arcsin(np.sin(xi0_prime) / np.cosh(eta0_prime))
         Q_prime = np.arcsinh(np.tan(beta_prime))
 
+        # Iteratively compute Q_double_prime for latitude
         e2 = self.f * (2 - self.f)
         e = np.sqrt(e2)
-        Q_double_prime = Q_prime
+        Q_double_prime = Q_prime.copy()
         while True:
             Q_new = Q_prime + e * np.arctanh(e * np.tanh(Q_double_prime))
-            if np.abs(Q_new - Q_double_prime) < 1e-12:
+            if np.max(np.abs(Q_new - Q_double_prime)) < 1e-12:
                 break
             Q_double_prime = Q_new
 
+        # Compute latitude and longitude
         lat = np.arctan(np.sinh(Q_double_prime))
         lon = self.lon_origin + np.arcsin(np.tanh(eta0_prime) / np.cos(beta_prime))
 
-        geog_coords = np.vstack([E, N])
-
+        # Combine into a single array and convert units if necessary
+        geog_coords = np.vstack((lon, lat))  # Longitude first, then latitude
         if unit == "deg":
-            geog_coords = np.rad2deg(geog_coords)
+            geog_coords = np.degrees(geog_coords)
 
         return geog_coords
+
 
 
 if __name__ == "__main__":
@@ -345,8 +350,9 @@ if __name__ == "__main__":
 
     # # Perform inverse projection
     proj_coordinates = np.vstack([easting, northing]).T
-    lat_back, lon_back = tm.projected_to_geog(proj_coordinates, unit="deg")
-    print(f"\nGeographic Coordinates:\nLatitude: {np.degrees(lat_back)}\nLongitude: {np.degrees(lon_back)}")
+    lon_back, lat_back = tm.projected_to_geog(proj_coordinates, unit="deg")
+    results = np.vstack((lon_back, lat_back)).T
+    print(f"\nGeographic Coordinates TM class:\n{results}")
 
     # # Test using Pyproj
     # easting_true, northing_true = Transformer.from_crs("EPSG:4326", "EPSG:32632", always_xy=True).transform(coords[:, 0], coords[:, 1])
