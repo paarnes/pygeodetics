@@ -221,6 +221,7 @@ class TransverseMercator:
             raise ValueError("Input coordinates must have shape (n, 2) or (n, 3)")
 
         lon, lat = coordinates[:, 0], coordinates[:, 1]
+        height = coordinates[:, 2] if coordinates.shape[1] == 3 else None
 
         if unit == "deg":
             lat = np.radians(lat)
@@ -249,7 +250,10 @@ class TransverseMercator:
         E = self.false_easting + self.scale_factor * self.B * eta
         N = self.false_northing + self.scale_factor * (self.B * xi - M0)
 
-        return np.vstack([E, N])
+        # Include height if present
+        if height is not None:
+            return np.vstack((E, N, height))
+        return np.vstack((E, N))
 
     def projected_to_geog(self, proj_coordinates: np.ndarray, unit: Literal["deg", "rad"] = "deg") -> np.ndarray:
         """
@@ -268,6 +272,7 @@ class TransverseMercator:
             raise ValueError("Input coordinates must have shape (n, 2) or (n, 3)")
 
         E, N = proj_coordinates[:, 0], proj_coordinates[:, 1]
+        height = proj_coordinates[:, 2] if proj_coordinates.shape[1] == 3 else None
 
         # Define reverse series coefficients
         h_prime_coeffs = {
@@ -314,17 +319,23 @@ class TransverseMercator:
         if unit == "deg":
             geog_coords = np.degrees(geog_coords)
 
+        # Include height if present
+        if height is not None:
+            return np.vstack((geog_coords, height))
+
         return geog_coords
 
 
 
 if __name__ == "__main__":
     from pyproj import Transformer, CRS
+    np.set_printoptions(precision=8, suppress=True)
     proj_true_values = (555776.2668, 6651832.7354)  # east, north
 
     # Define projection parameters
     lat_origin = 0  # Latitude of natural origin in radians
-    lon_origin = np.radians(9)  # Longitude of natural origin in radians
+    lon_origin = np.radians(9)  # Longitude of natural origin in radians (zone 32)
+    # lon_origin = np.radians(15)  # Longitude of natural origin in radians (zone 33)
     scale_factor = 0.9996  # Scale factor at the natural origin
     false_easting = 500000  # False easting in meters
     false_northing = 0  # False northing in meters
@@ -341,23 +352,24 @@ if __name__ == "__main__":
     lon = np.radians([3.0, 3.1, 3.2])  # Longitude in radians
 
     coords = np.array([[3, 60], [3.2, 61]])
+    coords = np.array([[3, 60, 100], [3.2, 61, 102]])
     # coords = [[3, 60], [3.2, 61]] # list of lists
 
     # Perform forward projection
-    easting, northing = tm.geog_to_projected(coords, unit="deg")
-    results = np.vstack((easting, northing)).T
+    easting, northing, *height = tm.geog_to_projected(coords, unit="deg")
+    results = np.vstack((easting, northing, height)).T if height else np.vstack((easting, northing)).T
     print(f"\nProjected Coordinates TM class:\n{results}")
 
-    # # Perform inverse projection
-    proj_coordinates = np.vstack([easting, northing]).T
-    lon_back, lat_back = tm.projected_to_geog(proj_coordinates, unit="deg")
-    results = np.vstack((lon_back, lat_back)).T
+    # # # Perform inverse projection
+    proj_coordinates = np.vstack([easting, northing, height]).T if height else np.vstack([easting, northing]).T
+    lon_back, lat_back, *height = tm.projected_to_geog(proj_coordinates, unit="deg")
+    results = np.vstack((lon_back, lat_back, height)).T if height else np.vstack((lon_back, lat_back)).T
     print(f"\nGeographic Coordinates TM class:\n{results}")
 
     # # Test using Pyproj
-    # easting_true, northing_true = Transformer.from_crs("EPSG:4326", "EPSG:32632", always_xy=True).transform(coords[:, 0], coords[:, 1])
-    # results_pyproj = np.vstack((easting_true, northing_true)).T
-    # print(f"\nProjected Coordinates Pyproj:\n{results_pyproj}")
+    easting_true, northing_true, *height_true = Transformer.from_crs("EPSG:4326", "EPSG:32632", always_xy=True).transform(coords[:, 0], coords[:, 1], coords[:, 1])
+    results_pyproj = np.vstack((easting_true, northing_true, height_true)).T if height else np.vstack((easting_true, northing_true)).T
+    print(f"\nProjected Coordinates Pyproj:\n{results_pyproj}")
 
 
 
