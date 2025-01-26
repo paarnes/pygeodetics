@@ -1,0 +1,4 @@
+numpy
+pygeodesy
+pytest
+python-dotenv
