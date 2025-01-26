@@ -1,3 +1,8 @@
+"""
+author: Per Helge Aarnes
+email: per.helge.aarnes@gmail.com
+"""
+
 
 from typing import Union
 import numpy as np

@@ -1,3 +1,8 @@
+"""
+author: Per Helge Aarnes
+email: per.helge.aarnes@gmail.com
+"""
+
 import numpy as np
 import pytest
 from Ellipsoid import WGS84
