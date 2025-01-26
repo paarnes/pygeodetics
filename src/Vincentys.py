@@ -1,24 +1,38 @@
 
 from typing import Union
 import numpy as np
-import Ellipsoid as Ellipsoid
+from Ellipsoid import Ellipsoid, WGS84
 
-def vincenty_distance(lat1: Union[float, np.ndarray], lon1: Union[float, np.ndarray],
-                      lat2: Union[float, np.ndarray], lon2: Union[float, np.ndarray],
-                      a: float, b: float, tol: float = 1e-12, max_iter: int = 200) -> Union[float, np.ndarray]:
+def vincenty_distance(
+    lon1: Union[float, np.ndarray],
+    lat1: Union[float, np.ndarray],
+    lon2: Union[float, np.ndarray],
+    lat2: Union[float, np.ndarray],
+    ellipsoid: Ellipsoid = WGS84(),
+    a: float = None,
+    b: float = None,
+    tol: float = 1e-12,
+    max_iter: int = 200
+) -> Union[float, np.ndarray]:
     """
     Compute the geodesic distance between two points on an ellipsoid using Vincenty's formulae.
 
     Parameters
     ----------
-    lat1 : float or np.ndarray
-        Geodetic latitude(s) of the first point(s) in radians.
     lon1 : float or np.ndarray
         Geodetic longitude(s) of the first point(s) in radians.
-    lat2 : float or np.ndarray
-        Geodetic latitude(s) of the second point(s) in radians.
+    lat1 : float or np.ndarray
+        Geodetic latitude(s) of the first point(s) in radians.
     lon2 : float or np.ndarray
         Geodetic longitude(s) of the second point(s) in radians.
+    lat2 : float or np.ndarray
+        Geodetic latitude(s) of the second point(s) in radians.
+    ellipsoid : Ellipsoid, optional
+        An Ellipsoid object that defines the semi-major and semi-minor axes. Defaults to WGS84.
+    a : float, optional
+        Semi-major axis of the ellipsoid (meters). Overrides `ellipsoid` if provided.
+    b : float, optional
+        Semi-minor axis of the ellipsoid (meters). Overrides `ellipsoid` if provided.
     a : float
         Semi-major axis of the ellipsoid (meters).
     b : float
@@ -42,6 +56,11 @@ def vincenty_distance(lat1: Union[float, np.ndarray], lon1: Union[float, np.ndar
     >>> distance = vincenty_distance(lat1, lon1, lat2, lon2, a, b)
     >>> print(f"Distance: {distance:.3f} meters")
     """
+
+    # Use a and b if explicitly provided, otherwise get from ellipsoid
+    if a is None and b is None:
+        a, b = ellipsoid.a, ellipsoid.b
+
     # Flattening
     f = (a - b) / a
 
@@ -105,56 +124,32 @@ def vincenty_distance(lat1: Union[float, np.ndarray], lon1: Union[float, np.ndar
          (-3 + 4 * cos2_sigma_m**2)))
 
     distance = b * A * (sigma - delta_sigma)
+    distance = float(distance) if isinstance(distance, np.float64) else distance
     return distance
 
 
+
 if __name__ == "__main__":
-    # # Example usage
-    # a = 6378137.0  # Semi-major axis (meters, WGS84)
-    # b = 6356752.314245  # Semi-minor axis (meters, WGS84)
 
-    # # Example 1: Single pair of coordinates
-    # lat1 = np.radians(52.2296756)
-    # lon1 = np.radians(21.0122287)
-    # lat2 = np.radians(41.8919300)
-    # lon2 = np.radians(12.5113300)
-
-    # distance = vincenty_distance(lat1, lon1, lat2, lon2, a, b)
-    # print(f"Distance (single point): {distance:.3f} meters")
-
-    # # Example 2: Multiple coordinates
-    # lat1 = np.radians([52.2296756, 48.856614])
-    # lon1 = np.radians([21.0122287, 2.3522219])
-    # lat2 = np.radians([41.8919300, 51.507222])
-    # lon2 = np.radians([12.5113300, -0.1275])
-
-    # distances = vincenty_distance(lat1, lon1, lat2, lon2, a, b)
-    # print(f"Distances (multiple points): {distances}")
-
-
-    from pygeodesy.ellipsoidalVincenty import LatLon
-
-    ellip = Ellipsoid.WGS84()
+    ellip = WGS84()
     a = ellip.a
     b = ellip.b
+
     # Example 1: Single pair of coordinates
-    lat1 = 52.2296756
-    lon1 = 21.0122287
-    lat2 = 41.8919300
-    lon2 = 12.5113300
+    lat1 = np.radians(52.2296756)
+    lon1 = np.radians(21.0122287)
+    lat2 = np.radians(41.8919300)
+    lon2 = np.radians(12.5113300)
 
-    # Convert to radians for vincenty_distance
-    lat1_rad = np.radians(lat1)
-    lon1_rad = np.radians(lon1)
-    lat2_rad = np.radians(lat2)
-    lon2_rad = np.radians(lon2)
+    distance = vincenty_distance(lon1, lat1, lon2, lat2, a=a, b=b)
+    print(f"Distance (single point): {distance:.6f} meters")
 
-    # Calculate distance using your vincenty_distance function
-    distance_custom = vincenty_distance(lat1_rad, lon1_rad, lat2_rad, lon2_rad, a, b)
-    print(f"Custom Vincenty Distance: {distance_custom:.12f} meters")
+    # Example 2: Multiple coordinates
+    lat1 = np.radians([52.2296756, 48.856614])
+    lon1 = np.radians([21.0122287, 2.3522219])
+    lat2 = np.radians([41.8919300, 51.507222])
+    lon2 = np.radians([12.5113300, -0.1275])
 
-    # Calculate distance using pygeodesy
-    p1 = LatLon(lat1, lon1)
-    p2 = LatLon(lat2, lon2)
-    distance_pygeodesy = p1.distanceTo(p2)
-    print(f"PyGeodesy Vincenty Distance: {distance_pygeodesy:.12f} meters")
+    distances = vincenty_distance(lon1, lat1, lon2, lat2, a=a, b=b)
+    print(f"Distances (multiple points): {distances}")
+
