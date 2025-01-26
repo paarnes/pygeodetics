@@ -1,3 +1,12 @@
+"""
+author: Per Helge Aarnes
+email: per.helge.aarnes@gmail.com
+
+MercatorVariantC class for performing Mercator Variant C projection conversions.
+This class provides methods to initialize projection parameters, convert geographic coordinates to projected coordinates,
+and convert projected coordinates back to geographic coordinates.
+"""
+
 import numpy as np
 from typing import Literal, Union, List
 
