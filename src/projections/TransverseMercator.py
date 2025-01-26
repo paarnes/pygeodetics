@@ -1,4 +1,10 @@
 """
+
+author: Per Helge Aarnes
+email: per.helge.aarnes@gmail.com
+
+
+
 Transverse Mercator Projection Module
 -------------------------------------
 
