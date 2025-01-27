@@ -1,41 +1,57 @@
-import numpy as np
+"""
+author: Per Helge Aarnes
+email: per.helge.aarnes@gmail.com
 
-def geod2ECEF(a: float, b: float, lat: float, lon: float, h: float) -> tuple:
+Assumes earth is a perfect sphere.
+
+Based on the "THE MERCATOR PROJECTIONS" book from  Peter Osborne, 2013
+See "The scale factor for the TMS projection" section at page 63.
+
+"""
+
+
+from typing import Tuple
+import numpy as np
+from Ellipsoid import Ellipsoid, WGS84
+
+
+
+
+def geod2ECEF(lat: float, lon: float, h: float, ellipsoid: Ellipsoid = WGS84(), a: float = None, b: float = None) -> Tuple:
     """
     Convert geodetic coordinates (latitude, longitude, height) to ECEF (Earth-Centered, Earth-Fixed)
     Cartesian coordinates.
 
     Parameters
     ----------
-    a : float
-        Semi-major axis of the ellipsoid (meters).
-    b : float
-        Semi-minor axis of the ellipsoid (meters).
-    lat : float
-        Geodetic latitude in radians.
-    lon : float
-        Geodetic longitude in radians.
-    h : float
-        Height above the ellipsoid in meters.
+    lat : float. Geodetic latitude in radians.
+    lon : float. Geodetic longitude in radians.
+    h : float. Height above the ellipsoid in meters.
+    ellipsoid : Ellipsoid, optional
+        An instance of the Ellipsoid class defining the ellipsoid. Defaults to WGS84.
+    a : float, optional. Semi-major axis of the ellipsoid (meters). Overrides `ellipsoid` if provided.
+    b : float, optional. Semi-minor axis of the ellipsoid (meters). Overrides `ellipsoid` if provided.
 
     Returns
     -------
-    tuple
-        A tuple containing the ECEF coordinates (X, Y, Z) in meters:
+    A tuple containing the ECEF coordinates (X, Y, Z) in meters:
         - X : float. X-coordinate in meters.
         - Y : float. Y-coordinate in meters.
         - Z : float. Z-coordinate in meters.
 
     Examples
     --------
-    >>> a = 6378137.0  # Semi-major axis of WGS84 ellipsoid
-    >>> b = 6356752.314245  # Semi-minor axis of WGS84 ellipsoid
     >>> lat = np.radians(59.907072474276958)  # Latitude in radians
     >>> lon = np.radians(10.754482924017791)  # Longitude in radians
     >>> h = 63.8281  # Height in meters
-    >>> X, Y, Z = geod2ECEF(a, b, lat, lon, h)
-    >>> print(f"X: {X:.3f}, Y: {Y:.3f}, Z: {Z:.3f}")
+    >>> # Example using WGS84 ellipsoid
+    >>> X, Y, Z = geod2ECEF(lat, lon, h)
+    >>> print(f"X: {X:.4f}, Y: {Y:.4f}, Z: {Z:.4f}")
     """
+    # Determine ellipsoid parameters
+    if a is None and b is None:
+        a, b = ellipsoid.a, ellipsoid.b
+
     # Compute the prime vertical radius of curvature
     e2 = (a**2 - b**2) / a**2  # Square of the first eccentricity
     N = a / np.sqrt(1 - e2 * np.sin(lat)**2)
@@ -49,13 +65,17 @@ def geod2ECEF(a: float, b: float, lat: float, lon: float, h: float) -> tuple:
 
 
 if __name__ == "__main__":
-    # Example usage
-    a = 6378137.0  # Semi-major axis of WGS84 ellipsoid
-    b = 6356752.314245  # Semi-minor axis of WGS84 ellipsoid
+    # Example usage with WGS84 ellipsoid
     lat = np.radians(59.907072474276958)  # Latitude in radians
     lon = np.radians(10.754482924017791)  # Longitude in radians
     h = 63.8281  # Height in meters
-    # Should get X, Y, Z = 3149785.9652, 598260.8822, 5495348.4927
 
-    X, Y, Z = geod2ECEF(a, b, lat, lon, h)
-    print(f"ECEF coordinates:\nX: {X:.4f} m\nY: {Y:.4f} m\nZ: {Z:.4f} m")
+    # Using WGS84 ellipsoid (default)
+    X, Y, Z = geod2ECEF(lat, lon, h)
+    print(f"Using WGS84 Ellipsoid:\nX: {X:.4f} m\nY: {Y:.4f} m\nZ: {Z:.4f} m")
+
+    # Example with manually specified ellipsoid parameters
+    a = 6378137.0  # Semi-major axis
+    b = 6356752.314245  # Semi-minor axis
+    X, Y, Z = geod2ECEF(lat, lon, h, a=a, b=b)
+    print(f"Using Manual Ellipsoid Parameters:\nX: {X:.4f} m\nY: {Y:.4f} m\nZ: {Z:.4f} m")
