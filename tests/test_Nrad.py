@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 from Ellipsoid import WGS84
-from geodetic.Nrad import Nrad
+from geodetics.Nrad import Nrad
 
 
 # Test cases for different locations

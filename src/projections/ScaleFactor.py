@@ -6,9 +6,9 @@ import sys
 import os
 import numpy as np
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
-from geodetic.Nrad import Nrad
-from geodetic.Mrad import Mrad
-from geodetic.footpoint_latitude import footpoint_latitude
+from geodetics.Nrad import Nrad
+from geodetics.Mrad import Mrad
+from geodetics.footpoint_latitude import footpoint_latitude
 
 
 def tm_point_scale_factor_geographic(a: float, b: float, lon: float, lat: float,

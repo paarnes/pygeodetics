@@ -8,7 +8,7 @@ import sys
 import os
 import numpy as np
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
-from geodetic.meridional_arc_dist import meridional_arc_dist
+from geodetics.meridional_arc_dist import meridional_arc_dist
 
 def footpoint_latitude(a: float, b: float, y: float, lat0: float, radians: bool = False) -> float:
     """
