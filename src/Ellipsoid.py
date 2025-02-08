@@ -172,9 +172,10 @@ class Ellipsoid:
         M = self.mrad(lat, angle_unit)
         return np.sqrt(M*N)
 
-    def radius_of_curvature_azimuth(self, lat: float, az: float, angle_unit: Literal["deg", "rad"] = "rad") -> float:
+    def radius_of_curvature_azimuth(self, lat: float, az: float, angle_unit: Literal["deg", "rad"] = "deg") -> float:
         """
-        Compute the radius of curvature for a given azimuth (Euler's equation).
+        This function calculates the radius of curvature in a given direction using Euler's equation.
+        It considers the meridional and normal radius of curvature to determine the radius for a specific azimuth.
 
         Parameters
         ----------
@@ -186,11 +187,6 @@ class Ellipsoid:
         Returns
         -------
         float. Radius of curvature for the given azimuth (meters).
-
-        Notes
-        -----
-        This function calculates the radius of curvature in a given direction using Euler's equation.
-        It considers the meridional and normal radii of curvature to determine the radius for a specific azimuth.
         """
         if angle_unit == "deg":
             lat, az = np.radians(lat), np.radians(az)
