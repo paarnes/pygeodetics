@@ -11,29 +11,21 @@ def ECEF2enu(lat: Union[float, np.ndarray], lon: Union[float, np.ndarray],
              dX: Union[float, np.ndarray], dY: Union[float, np.ndarray],
              dZ: Union[float, np.ndarray]) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
-    Converts a displacement vector in ECEF coordinates to the local topocentric ENU (East-North-Up) coordinate system.
+    Converts from ECEF coordinates to the local topocentric ENU (East-North-Up) coordinate system.
 
     Parameters
     ----------
-    lat : float or np.ndarray
-        Geodetic latitude(s) of the reference point(s) in radians.
-    lon : float or np.ndarray
-        Geodetic longitude(s) of the reference point(s) in radians.
-    dX : float or np.ndarray
-        X displacement(s) in ECEF coordinates (meters).
-    dY : float or np.ndarray
-        Y displacement(s) in ECEF coordinates (meters).
-    dZ : float or np.ndarray
-        Z displacement(s) in ECEF coordinates (meters).
+    lat : float or np.ndarray. Geodetic latitude(s) of the reference point(s) in radians.
+    lon : float or np.ndarray. Geodetic longitude(s) of the reference point(s) in radians.
+    dX : float or np.ndarray. X coordinate (ECEF in meters).
+    dY : float or np.ndarray. Y coordinate (ECEF in meters).
+    dZ : float or np.ndarray. Z coordinate (ECEF in meters).
 
     Returns
     -------
-    e : np.ndarray
-        East displacement(s) in the ENU coordinate system (meters).
-    n : np.ndarray
-        North displacement(s) in the ENU coordinate system (meters).
-    u : np.ndarray
-        Up displacement(s) in the ENU coordinate system (meters).
+    e : np.ndarray. East coordinate in the ENU coordinate system (meters).
+    n : np.ndarray. North coordinate in the ENU coordinate system (meters).
+    u : np.ndarray. Up coordinate in the ENU coordinate system (meters).
 
     Examples
     --------

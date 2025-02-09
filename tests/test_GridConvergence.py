@@ -1,38 +1,39 @@
 import numpy as np
 import pytest
-from Ellipsoid import WGS84
-from projections.GridConvergence import tms_grid_convergence_projected, tm_grid_convergence_geographic
+from Ellipsoid import WGS84, GRS80
+from projections.GridConvergence import tm_grid_convergence_projected, tm_grid_convergence_geographic
 
-# Define WGS84 ellipsoid parameters
-ellip = WGS84()
-a = ellip.a
-b = ellip.b
+
 
 # Test cases for different locations
-test_cases_tms = [
-    {
-        "x": 555776.266751609742641,
-        "y": 6651832.735433666035533,
+test_cases_tm_proj = [
+    {   "a": GRS80().a,
+        "b": GRS80().b,
+        "x": 555776.2667516097,
+        "y": 6651832.735433666,
         "false_easting": 500000,
-        "angle_unit": "deg",
-        "description": "Test 1",
-        "gamma_true": 0.8660474985710462,  # True meridian convergence
+        "lat0": 0,
+        "radians": False,
+        "description": "Test grid convergences projected",
+        "gamma_true": 0.864869193938,  # True meridian convergence
     }
 ]
 
-@pytest.mark.parametrize("case", test_cases_tms)
-def test_tms_grid_convergence(case):
+@pytest.mark.parametrize("case", test_cases_tm_proj)
+def test_tm_grid_convergence_proj(case):
     """
     Test the custom tms_grid_convergence function against known true values.
     """
+    a, b = case["a"], case["b"]
     x, y = case["x"], case["y"]
+    lat0 = case["lat0"]
     false_easting = case["false_easting"]
-    angle_unit = case["angle_unit"]
+    radians = case["radians"]
     gamma_true = case["gamma_true"]
     description = case["description"]
 
     # Compute grid convergence
-    gamma = tms_grid_convergence_projected(x, y, false_easting, angle_unit=angle_unit)
+    gamma = tm_grid_convergence_projected(a, b, x, y, lat0, false_easting, radians)
 
     # Assert the grid convergence is close to the expected value
     assert np.isclose(gamma, gamma_true, atol=1e-6), (

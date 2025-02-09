@@ -3,10 +3,13 @@ author: Per Helge Aarnes
 email: per.helge.aarnes@gmail.com
 """
 
-
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
+from Ellipsoid import Ellipsoid, WGS84
 from typing import Union
 import numpy as np
-from Ellipsoid import Ellipsoid, WGS84
+
 
 def vincenty_distance(
     lon1: Union[float, np.ndarray],
@@ -24,33 +27,21 @@ def vincenty_distance(
 
     Parameters
     ----------
-    lon1 : float or np.ndarray
-        Geodetic longitude(s) of the first point(s) in radians.
-    lat1 : float or np.ndarray
-        Geodetic latitude(s) of the first point(s) in radians.
-    lon2 : float or np.ndarray
-        Geodetic longitude(s) of the second point(s) in radians.
-    lat2 : float or np.ndarray
-        Geodetic latitude(s) of the second point(s) in radians.
-    ellipsoid : Ellipsoid, optional
-        An Ellipsoid object that defines the semi-major and semi-minor axes. Defaults to WGS84.
-    a : float, optional
-        Semi-major axis of the ellipsoid (meters). Overrides `ellipsoid` if provided.
-    b : float, optional
-        Semi-minor axis of the ellipsoid (meters). Overrides `ellipsoid` if provided.
-    a : float
-        Semi-major axis of the ellipsoid (meters).
-    b : float
-        Semi-minor axis of the ellipsoid (meters).
-    tol : float, optional
-        Convergence tolerance (default: 1e-12).
-    max_iter : int, optional
-        Maximum number of iterations for convergence (default: 200).
+    lon1 : float or np.ndarray. Geodetic longitude(s) of the first point(s) in radians.
+    lat1 : float or np.ndarray. Geodetic latitude(s) of the first point(s) in radians.
+    lon2 : float or np.ndarray. Geodetic longitude(s) of the second point(s) in radians.
+    lat2 : float or np.ndarray. Geodetic latitude(s) of the second point(s) in radians.
+    ellipsoid : Ellipsoid, optional. An Ellipsoid object that defines the semi-major and semi-minor axes. Defaults to WGS84.
+    a : float, optional. Semi-major axis of the ellipsoid (meters). Overrides `ellipsoid` if provided.
+    b : float, optional. Semi-minor axis of the ellipsoid (meters). Overrides `ellipsoid` if provided.
+    a : float. Semi-major axis of the ellipsoid (meters).
+    b : float. Semi-minor axis of the ellipsoid (meters).
+    tol : float, optional. Convergence tolerance (default: 1e-12).
+    max_iter : int, optional. Maximum number of iterations for convergence (default: 200).
 
     Returns
     -------
-    distance : float or np.ndarray
-        The geodesic distance(s) between the two points (meters).
+    distance : float or np.ndarray. The geodesic distance(s) between the two points (meters).
 
     Examples
     --------
@@ -135,7 +126,6 @@ def vincenty_distance(
 
 
 if __name__ == "__main__":
-
     ellip = WGS84()
     a = ellip.a
     b = ellip.b

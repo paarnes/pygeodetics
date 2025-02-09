@@ -8,7 +8,6 @@ import sys
 import os
 from typing import Literal
 import numpy as np
-# Add 'src' to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
 from geodetics.footpoint_latitude import footpoint_latitude
 from geodetics.Nrad import Nrad
