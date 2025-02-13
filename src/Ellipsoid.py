@@ -30,12 +30,16 @@ class Ellipsoid:
         if b is None and f is None:
             raise ValueError("Either 'b' or 'f' must be defined.")
         self.a = a
-        if b is not None:
+        if b is not None and f is None:
             self.b = b
             self.f = (self.a - self.b) / self.a
-        elif f is not None:
+        elif f is not None and b is None:
             self.f = f
             self.b = self.a * (1 - self.f)
+        elif b is not None and f is not None:
+            self.b = b
+            self.f = f
+
         self.inv_f = 1 / self.f
         self.e2 = self.eccentricity_squared() # e^2
         self.e = np.sqrt(self.e2) # e
