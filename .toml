@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pygeodetics"
+version = "0.1.0"
+description = "A Python library for geodetic computations and coordinate transformations"
+authors = [{ name = "Per Helge Aarnes", email = "per.helge.aarnes@gmail.com" }]
+license = { file = "LICENSE" }
+readme = "README.md"
+keywords = ["geodesy", "coordinates", "geodetic", "ECEF", "ENU", "transformation", "ellipsoid"]
+requires-python = ">=3.7"
+dependencies = [
+    "numpy>=1.21",
+]
+
+[project.urls]
+Homepage = "https://github.com/yourusername/pygeodetics"
+Repository = "https://github.com/yourusername/pygeodetics"
+Issues = "https://github.com/yourusername/pygeodetics/issues"
+
+[tool.setuptools]
+packages = ["pygeodetics"]
+
+[tool.setuptools.package-data]
+pygeodetics = ["*.py"]
