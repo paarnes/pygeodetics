@@ -3,11 +3,12 @@ author: Per Helge Aarnes
 email: per.helge.aarnes@gmail.com
 """
 
-from typing import Literal, Optional
+from typing import Literal, Optional, Tuple
 import numpy as np
 from Ellipsoid import Ellipsoid, WGS84
 from geodetics.ECEF2enu import ECEF2enu
 from geodetics.ECEF2geod import ECEF2geodb
+from geodetics.geod2ECEF import geod2ECEF
 from geodetics.geodetic_inverse_problem import geodetic_inverse_problem
 from geodetics.geodetic_direct_problem import geodetic_direct_problem
 from geodetics.radius_of_curvature_azimuth import radius_of_curvature_azimuth
@@ -162,7 +163,7 @@ class Geodetic(Ellipsoid):
         Notes
         -----
         This function computes geodetic latitude, longitude, and height above the ellipsoid
-        from ECEF coordinates using an iterative method.
+        from ECEF coordinates using an Bowrings method.
 
         Parameters
         ----------
@@ -183,6 +184,32 @@ class Geodetic(Ellipsoid):
 
         """
         return ECEF2geodb(self.a, self.b, X, Y, Z, angle_unit)
+
+    def geod2ecef(self, lat: float, lon: float, h: float, radians: bool = False) -> Tuple[float, float, float]:
+        """
+        Convert geodetic coordinates (latitude, longitude, height) to ECEF (Earth-Centered, Earth-Fixed) coordinates.
+
+        Parameters
+        ----------
+        lat : float. Geodetic latitude in degrees (if radians=False) or radians (if radians=True).
+        lon : float. Geodetic longitude in degrees (if radians=False) or radians (if radians=True).
+        h : float. Height above the ellipsoid (meters).
+        radians : bool, optional. If `False`, assumes `lat` and `lon` are in degrees and converts them to radians.
+
+        Returns
+        -------
+        X : float. ECEF X coordinate (meters).
+        Y : float. ECEF Y coordinate (meters).
+        Z : float. ECEF Z coordinate (meters).
+
+        Examples
+        --------
+        >>> geod = Geodetic(WGS84())
+        >>> X, Y, Z = geod.geod2ECEF(60.0, 10.0, 100.0, radians=False)
+        >>> print(f"X: {X:.3f}, Y: {Y:.3f}, Z: {Z:.3f}")
+        """
+        return geod2ECEF(lat, lon, h, ellipsoid=self.ellipsoid, radians=radians)
+
 
 
 
@@ -235,4 +262,16 @@ if __name__ == "__main__":
     print(f"Latitude: {lat:.10f} degrees")
     print(f"Longitude: {lon:.10f} degrees")
     print(f"Height: {h:.3f} meters\n")
+
+    # Geodetic to ECEF example
+    lat_geo = 59.907072474276958  # Latitude in degrees
+    lon_geo = 10.754482924017791  # Longitude in degrees
+    h_geo = 63.8281  # Height in meters
+
+
+    X, Y, Z = geod.geod2ecef(lat_geo, lon_geo, h_geo, radians=False)
+    print(f"Geodetic to ECEF:")
+    print(f"X: {X:.4f} meters")
+    print(f"Y: {Y:.4f} meters")
+    print(f"Z: {Z:.4f} meters\n")
 
