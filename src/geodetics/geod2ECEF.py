@@ -97,5 +97,9 @@ if __name__ == "__main__":
     lon = np.radians(10.754482924017791)
     h = 63.8281  # Height in meters
 
+    lat = np.radians(-45)
+    lon = np.radians(-130.754482924017791)
+    h = 63.8281  # Height in meters
+
     X, Y, Z = geod2ECEF(lat, lon, h, a=a, b=b, radians=True)
     print(f"Using Manual Ellipsoid Parameters:\nX: {X:.4f} m\nY: {Y:.4f} m\nZ: {Z:.4f} m")
