@@ -3,9 +3,19 @@ author: Per Helge Aarnes
 email: per.helge.aarnes@gmail.com
 """
 
+from typing import Tuple
 import numpy as np
 
-def geodetic_direct_problem(a: float, b: float, lat1: float, lon1: float, az1: float, d: float, quadrant_correction: bool = False):
+def geodetic_direct_problem(
+    a: float,
+    b: float,
+    lat1: float,
+    lon1: float,
+    az1: float,
+    d: float,
+    quadrant_correction: bool = False,
+    radians: bool = False
+) -> Tuple[float, float, float]:
     """
     Solve the geodetic direct problem: Compute the destination coordinates and final azimuth
     given an initial point, azimuth, and distance.
@@ -24,14 +34,23 @@ def geodetic_direct_problem(a: float, b: float, lat1: float, lon1: float, az1: f
     lon1 : float. Longitude of the initial point in radians.
     az1 : float. Forward azimuth at the initial point in radians.
     d : float. Distance to travel along the geodesic (meters).
-    quadrant_correction : bool, optional. If True, ensures azimuths are in the range [0, 2π]. Default is False.
+    quadrant_correction : bool, optional. If True, ensures azimuths
+        are in the range [0, 2π]. Default is False.
 
     Returns
     -------
-    lat2 : float. Latitude of the destination point in radians.
-    lon2 : float. Longitude of the destination point in radians.
-    az2 : float. Reverse azimuth at the destination point in radians.
+    lat2 : float. Latitude of the destination point
+        (degrees if `radians=False`, radians if `radians=True`).
+    lon2 : float. Longitude of the destination point
+        (degrees if `radians=False`, radians if `radians=True`).
+    az2 : float. Reverse azimuth at the destination point
+        (degrees if `radians=False`, radians if `radians=True`).
     """
+
+    # Convert inputs to radians if they are in degrees
+    if not radians:
+        lat1, lon1, az1 = np.radians(lat1), np.radians(lon1), np.radians(az1)
+
     # Compute flattening and second eccentricity squared
     f = (a - b) / a
     e2m = (a**2 - b**2) / b**2
@@ -79,6 +98,10 @@ def geodetic_direct_problem(a: float, b: float, lat1: float, lon1: float, az1: f
     if quadrant_correction:
         az2 = np.mod(az2, 2 * np.pi)
 
+    # Convert outputs to degrees if input was in degrees
+    if not radians:
+        lat2, lon2, az2 = np.degrees(lat2), np.degrees(lon2), np.degrees(az2)
+
     return lat2, lon2, az2
 
 
@@ -99,7 +122,7 @@ if __name__ == "__main__":
     az1 = np.radians(-147.4628043168) # Initial azimuth (in radians)
     d = 1316208.08334 # Distance in meters
 
-    lat2, lon2, az2 = geodetic_direct_problem(a, b, lat1, lon1, az1, d, quadrant_correction=True)
+    lat2, lon2, az2 = geodetic_direct_problem(a, b, lat1, lon1, az1, d, quadrant_correction=True, radians=True)
 
     print(f"Destination Latitude: {np.degrees(lat2):.10f} degrees")
     print(f"Destination Longitude: {np.degrees(lon2):.10f} degrees")

@@ -11,10 +11,8 @@ def Nrad(a: float, b: float, lat: float, radians: bool = False) -> float:
     """
     Compute the normal radius of curvature (N) at a given latitude.
 
-    Notes
-    -----
-    The normal radius of curvature (N) is the radius of the prime vertical at a given latitude.
-    It is used in various geodetic calculations, including coordinate transformations and map projections.
+    The normal radius of curvature (N) is perpendicular to the meridian
+    and represents the radius of curvature in the east-west direction.
 
     Parameters
     ----------

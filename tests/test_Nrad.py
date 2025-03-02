@@ -1,3 +1,8 @@
+"""
+author: Per Helge Aarnes
+email: per.helge.aarnes@gmail.com
+"""
+
 import numpy as np
 import pytest
 from Ellipsoid import WGS84
@@ -11,13 +16,13 @@ test_cases_1 = [
         "b": WGS84().b,
         "lat": 60,
         "radians": False,
-        "description": "Test 1",
-        "Nrad_true": 6394209.173847894184,  # True footpoint lat (degree)
+        "description": "Test 1: Normal radius of curvature (N) at latitude 60",
+        "Nrad_true": 6394209.17385,
     }
 ]
 
 @pytest.mark.parametrize("case", test_cases_1)
-def test_calc_footpoint_latitude(case):
+def test_Nrad(case):
     """
     Test the custom tms_grid_convergence function against known true values.
     """

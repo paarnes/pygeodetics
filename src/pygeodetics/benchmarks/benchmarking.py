@@ -1,4 +1,8 @@
 import timeit
+
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../geodetics')))
 from ECEF2geod import ECEF2geod, ECEF2geodb, ECEF2geodv
 
 # Define parameters

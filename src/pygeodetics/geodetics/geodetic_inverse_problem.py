@@ -3,32 +3,54 @@ author: Per Helge Aarnes
 email: per.helge.aarnes@gmail.com
 """
 
-
+from typing import Tuple
 import numpy as np
 
 
-def geodetic_inverse_problem(a: float, b: float, lat1: float, lon1: float,
-                             lat2: float, lon2: float, quadrant_correction: bool = False):
+def geodetic_inverse_problem(
+    a: float,
+    b: float,
+    lat1: float,
+    lon1: float,
+    lat2: float,
+    lon2: float,
+    quadrant_correction: bool = False,
+    radians: bool = False) -> Tuple[float, float, float]:
     """
-    Solve the geodetic indirect problem.
+    Solve the geodetic inverse problem:
+    Compute azimuths and geodesic distance between two points.
+
+    If the points are given in degrees, set `radians=False`.
+    The function will return azimuths in same unit as input.
+
 
     Parameters
     ----------
     a : float. Semi-major axis of the ellipsoid (meters).
     b : float. Semi-minor axis of the ellipsoid (meters).
-    lat1 : float. Latitude of the first point in radians.
-    lon1 : float. Longitude of the first point in radians.
-    lat2 : float. Latitude of the second point in radians.
-    lon2 : float. Longitude of the second point in radians.
+    lat1 : float. Latitude of the first point.
+    lon1 : float. Longitude of the first point.
+    lat2 : float. Latitude of the second point.
+    lon2 : float. Longitude of the second point.
     quadrant_correction : bool, optional. If True, ensures
         azimuths are in the range [0, 2π]. Default is False.
+    radians : bool, optional. If False (default), assumes latitudes
+        and longitudes are in degrees and converts them to radians.
 
     Returns
     -------
-    az1 : float. Forward azimuth at point 1 (radians).
-    az2 : float. Reverse azimuth at point 2 (radians).
+    az1 : float. Forward azimuth at point 1
+        (degrees if `radians=False`, radians if `radians=True`).
+    az2 : float. Reverse azimuth at point 2
+        (degrees if `radians=False`, radians if `radians=True`).
     d : float. Geodesic distance between the two points (meters).
     """
+
+    # Convert inputs to radians if they are in degrees
+    if not radians:
+        lat1, lon1 = np.radians(lat1), np.radians(lon1)
+        lat2, lon2 = np.radians(lat2), np.radians(lon2)
+
     f = (a - b) / a
     e2m = (a**2 - b**2) / b**2
 
@@ -79,6 +101,10 @@ def geodetic_inverse_problem(a: float, b: float, lat1: float, lon1: float,
         - H**2 / 2 * np.sin(2 * sigma) * np.cos(2 * (sigma1 + sigma2))
         - H**3 / 3 * np.sin(3 * sigma) * np.cos(3 * (sigma1 + sigma2))
     )
+
+    # Convert azimuths to degrees if input was in degrees
+    if not radians:
+        az1, az2 = np.degrees(az1), np.degrees(az2)
 
     return az1, az2, d
 

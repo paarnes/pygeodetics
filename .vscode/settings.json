@@ -1,5 +1,7 @@
 {
     "python.analysis.extraPaths": [
-        "./src"
+        "./src",
+        "./src/pygeodetics/geodetics",
+        "./src/pygeodetics"
     ]
 }
