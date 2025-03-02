@@ -10,11 +10,8 @@ def Mrad(a: float, b: float, lat: float, radians: bool = False) -> float:
     """
     Compute the meridional radius of curvature (M) at a given latitude.
 
-    Notes
-    -----
-    The meridional radius of curvature (M) describes how the Earth's curvature behaves
-    in the north-south direction. It is used in geodetic calculations, including
-    meridional arc length computations.
+    The meridional radius of curvature (M) represents the radius of curvature
+    in the north-south direction along a meridian.
 
     Parameters
     ----------
