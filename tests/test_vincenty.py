@@ -7,7 +7,7 @@ email: per.helge.aarnes@gmail.com
 import numpy as np
 import pytest
 from pygeodesy.ellipsoidalVincenty import LatLon
-from Vincentys import vincenty_distance  # Replace `your_module` with the actual module name
+from geodetics.Vincenty import vincenty_distance  # Replace `your_module` with the actual module name
 import Ellipsoid as Ellipsoid
 
 
@@ -46,7 +46,7 @@ def test_vincenty(case):
     lon2_rad = np.radians(lon2)
 
     # Calculate distance using the custom vincenty_distance function
-    custom_distance = vincenty_distance(lon1_rad, lat1_rad, lon2_rad, lat2_rad, a=a, b=b)
+    custom_distance = vincenty_distance(lon1_rad, lat1_rad, lon2_rad, lat2_rad, a=a, b=b, radians=True)
 
     # Calculate distance using pygeodesy
     p1 = LatLon(lat1, lon1)
