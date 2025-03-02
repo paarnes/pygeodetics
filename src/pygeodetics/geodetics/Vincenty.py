@@ -20,7 +20,8 @@ def vincenty_distance(
     a: float = None,
     b: float = None,
     tol: float = 1e-12,
-    max_iter: int = 200
+    max_iter: int = 200,
+    radians: bool = False,
 ) -> Union[float, np.ndarray]:
     """
     Compute the geodesic distance between two points on an ellipsoid using Vincenty's formulae.
@@ -38,6 +39,8 @@ def vincenty_distance(
     b : float. Semi-minor axis of the ellipsoid (meters).
     tol : float, optional. Convergence tolerance (default: 1e-12).
     max_iter : int, optional. Maximum number of iterations for convergence (default: 200).
+    radians : bool, optional. If False, assumes `lat1`, `lon1`, `lat2`, and `lon2` are in degrees and converts them to radians.
+
 
     Returns
     -------
@@ -52,6 +55,13 @@ def vincenty_distance(
     >>> distance = vincenty_distance(lat1, lon1, lat2, lon2, a, b)
     >>> print(f"Distance: {distance:.3f} meters")
     """
+
+    # Convert inputs to radians if they are in degrees
+    if not radians:
+        lat1 = np.radians(lat1)
+        lon1 = np.radians(lon1)
+        lat2 = np.radians(lat2)
+        lon2 = np.radians(lon2)
 
     # Use a and b if explicitly provided, otherwise get from ellipsoid
     if a is None and b is None:
