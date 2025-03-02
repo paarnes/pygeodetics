@@ -1,6 +1,6 @@
 
 <p align="center">
-    <img src="docs/icon/pygeodetics.png" alt="PyGeodetics Logo" width="700">
+    <img src="https://github.com/paarnes/pygeodetics/blob/main/docs/icon/pygeodetics.png?raw=true" alt="PyGeodetics Logo" width="700">
 </p>
 
 
