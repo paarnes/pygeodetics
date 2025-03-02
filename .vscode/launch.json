@@ -24,7 +24,8 @@
                 "--pdb",
                 "--capture=no",
                 // "tests/test_vincenty.py",
-                "tests/test_ECEF2enu.py",
+                // "tests/test_ECEF2enu.py",
+                "tests/test_Geodetic.py",
 
             ]
         }
