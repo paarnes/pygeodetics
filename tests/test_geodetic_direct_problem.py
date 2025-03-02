@@ -21,6 +21,7 @@ test_cases = [
         "az1": np.radians(-147.4628043168),  # Initial azimuth (radians)
         "d": 1316208.08334,  # Distance (meters)
         "quadrant_correction": False,  # Apply quadrant correction
+        "radians": True, # Input values are in radians
         "lat2_true": np.radians(41.8919300),  # True destination latitude (radians)
         "lon2_true": np.radians(12.5113300),  # True destination longitude (radians)
         "az2_true": np.radians(-153.7168672618),  # True final azimuth (radians)
@@ -32,6 +33,7 @@ test_cases = [
         "az1": np.radians(-147.4628043168),  # Initial azimuth (radians)
         "d": 1316208.08334,  # Distance (meters)
         "quadrant_correction": True,  # Apply quadrant correction
+        "radians": True, # Input values are in radians
         "lat2_true": np.radians(41.8919300),  # True destination latitude (radians)
         "lon2_true": np.radians(12.5113300),  # True destination longitude (radians)
         "az2_true": np.radians(206.2831327381),  # True final azimuth (radians)
@@ -48,10 +50,11 @@ def test_geodetic_direct_problem(case):
     lat1, lon1, az1, d = case["lat1"], case["lon1"], case["az1"], case["d"]
     lat2_true, lon2_true, az2_true = case["lat2_true"], case["lon2_true"], case["az2_true"]
     quadrant_correction = case["quadrant_correction"]
+    radians = case["radians"]
     description = case["description"]
 
     # Compute the destination point using the function
-    lat2, lon2, az2 = geodetic_direct_problem(a, b, lat1, lon1, az1, d, quadrant_correction)
+    lat2, lon2, az2 = geodetic_direct_problem(a, b, lat1, lon1, az1, d, quadrant_correction, radians)
 
     # Assert that the computed values are close to the true values
     assert np.isclose(lat2, lat2_true, atol=1e-6), (

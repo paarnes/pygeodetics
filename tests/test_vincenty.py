@@ -46,7 +46,7 @@ def test_vincenty(case):
     lon2_rad = np.radians(lon2)
 
     # Calculate distance using the custom vincenty_distance function
-    custom_distance = vincenty_distance(lon1_rad, lat1_rad, lon2_rad, lat2_rad, a=a, b=b)
+    custom_distance = vincenty_distance(lon1_rad, lat1_rad, lon2_rad, lat2_rad, a=a, b=b, radians=True)
 
     # Calculate distance using pygeodesy
     p1 = LatLon(lat1, lon1)

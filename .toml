@@ -1,27 +1,52 @@
 [build-system]
-requires = ["setuptools", "wheel"]
+requires = ["setuptools>=42", "setuptools_scm[toml]>=6.2", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "pygeodetics"
-version = "0.1.0"
+dynamic = ["version"]
 description = "A Python library for geodetic computations and coordinate transformations"
 authors = [{ name = "Per Helge Aarnes", email = "per.helge.aarnes@gmail.com" }]
 license = { file = "LICENSE" }
 readme = "README.md"
-keywords = ["geodesy", "coordinates", "geodetic", "ECEF", "ENU", "transformation", "ellipsoid"]
+keywords = [
+    "geodesy", "coordinates", "geodetic", "ECEF", "ENU", "conversion",
+    "ellipsoid", "geodetic-direct", "geodetic-inverse", "vincenty-formula",
+    "transverse-mercator", "map-projections", "scale-factor", "grid-convergence"
+]
 requires-python = ">=3.7"
 dependencies = [
     "numpy>=1.21",
 ]
 
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
 [project.urls]
-Homepage = "https://github.com/yourusername/pygeodetics"
-Repository = "https://github.com/yourusername/pygeodetics"
-Issues = "https://github.com/yourusername/pygeodetics/issues"
+Homepage = "https://github.com/paarnes/pygeodetics"
+Repository = "https://github.com/paarnes/pygeodetics"
+Issues = "https://github.com/paarnes/pygeodetics/issues"
 
 [tool.setuptools]
 packages = ["pygeodetics"]
 
 [tool.setuptools.package-data]
 pygeodetics = ["*.py"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["pygeodetics*"]
+
+[tool.setuptools_scm]
+version_scheme = "post-release"
+local_scheme = "dirty-tag"
