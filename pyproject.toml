@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pygeodetics"
-dynamic = ["version"]
-description = "A Python library for geodetic computations and coordinate transformations"
+version = "0.1.0"
+description = "A Python library for geodetic computations"
 authors = [{ name = "Per Helge Aarnes", email = "per.helge.aarnes@gmail.com" }]
 license = { file = "LICENSE" }
 readme = "README.md"
@@ -38,15 +38,12 @@ Repository = "https://github.com/paarnes/pygeodetics"
 Issues = "https://github.com/paarnes/pygeodetics/issues"
 
 [tool.setuptools]
-packages = ["pygeodetics"]
-
-[tool.setuptools.package-data]
-pygeodetics = ["*.py"]
+package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
 include = ["pygeodetics*"]
 
-[tool.setuptools_scm]
-version_scheme = "post-release"
-local_scheme = "dirty-tag"
+[tool.setuptools.package-data]
+pygeodetics = ["*.py"]
+
