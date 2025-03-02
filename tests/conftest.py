@@ -13,4 +13,6 @@ Notes:
 
 import sys
 import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../src/pygeodetics')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../src/pygeodetics/geodetics')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../src/pygeodetics/projections')))

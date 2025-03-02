@@ -70,7 +70,7 @@ def ECEF2geodb(a: float, b: float, X: float, Y: float,
               Z: float, angle_unit: Literal["deg","rad"]= "deg") -> Tuple[float, float, float]:
     """
     Convert Cartesian ECEF coordinates to geodetic coordinates using Bowring's method.
-    Faster and slightly more accurate than the iterative method. Gives excact same results as pyproj.
+    Faster and slightly more accurate than the iterative method.
 
     Parameters
     ----------
@@ -173,6 +173,9 @@ def ECEF2geodv(a: float, b: float, X: float, Y: float,
 
 
 if __name__ == "__main__":
+    import sys
+    import os
+    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
     from Ellipsoid import WGS84
     from pyproj import Transformer
 

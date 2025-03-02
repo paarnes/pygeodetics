@@ -30,12 +30,16 @@ class Ellipsoid:
         if b is None and f is None:
             raise ValueError("Either 'b' or 'f' must be defined.")
         self.a = a
-        if b is not None:
+        if b is not None and f is None:
             self.b = b
             self.f = (self.a - self.b) / self.a
-        elif f is not None:
+        elif f is not None and b is None:
             self.f = f
             self.b = self.a * (1 - self.f)
+        elif b is not None and f is not None:
+            self.b = b
+            self.f = f
+
         self.inv_f = 1 / self.f
         self.e2 = self.eccentricity_squared() # e^2
         self.e = np.sqrt(self.e2) # e
@@ -132,11 +136,102 @@ class Ellipsoid:
         N = self.a / (1 - self.e2 * np.sin(lat)**2)**(1/2)
         return N
 
+    def footlat(self, y: float, lat0: float, a: float = None, b: float = None) -> float:
+        """
+        Compute the footpoint latitude (latitude of the origin of meridian arc).
+
+        Parameters
+        ----------
+        y : float. Northing (meters).
+        lat0 : float. Latitude of the natural origin (radians).
+        a : float, optional. Semi-major axis of the ellipsoid (meters). If not provided, uses instance attribute.
+        b : float, optional. Semi-minor axis of the ellipsoid (meters). If not provided, uses instance attribute.
+
+        Returns
+        -------
+        float. Footpoint latitude (radians).
+        """
+        # Use provided a and b or default to instance attributes
+        a = a if a is not None else self.a
+        b = b if b is not None else self.b
+
+        f = (a - b) / a
+        b0 = a * (1 - 1 / 2 * f + 1 / 16 * f**2 + 1 / 32 * f**3)
+
+        # Compute meridian arc length
+        B = self.marc(lat0, angle_unit="rad") + y
+
+        # Compute footpoint latitude
+        latf = (
+            B / b0
+            + (3 / 4 * f + 3 / 8 * f**2 + 21 / 256 * f**3) * np.sin(2 * B / b0)
+            + (21 / 64 * f**2 + 21 / 64 * f**3) * np.sin(4 * B / b0)
+            + (151 / 768 * f**3) * np.sin(6 * B / b0)
+        )
+        return latf
+
     def mean_radis_for_latitude(self, lat: float, angle_unit: Literal["deg", "rad"] = "rad") -> float:
         """Calculate the mean radius of curvature for a given latitude"""
         N = self.nrad(lat, angle_unit)
         M = self.mrad(lat, angle_unit)
         return np.sqrt(M*N)
+
+    def radius_of_curvature_azimuth(self, lat: float, az: float, angle_unit: Literal["deg", "rad"] = "deg") -> float:
+        """
+        This function calculates the radius of curvature in a given direction using Euler's equation.
+        It considers the meridional and normal radius of curvature to determine the radius for a specific azimuth.
+
+        Parameters
+        ----------
+        lat : float. Latitude in degrees or radians.
+        az : float. Azimuth angle in degrees or radians.
+        angle_unit : Literal["deg", "rad"], optional. Specifies whether input angles are in degrees or radians.
+                    Defaults to "rad".
+
+        Returns
+        -------
+        float. Radius of curvature for the given azimuth (meters).
+        """
+        if angle_unit == "deg":
+            lat, az = np.radians(lat), np.radians(az)
+
+        M = self.mrad(lat, angle_unit="rad")  # Meridional radius of curvature
+        N = self.nrad(lat, angle_unit="rad")  # Transverse radius of curvature
+
+        return (M * N) / (M * np.sin(az)**2 + N * np.cos(az)**2)
+
+    def tm_conv(self, x: float, y: float, lat0: float, false_easting: float,
+                a: float = None, b: float = None) -> float:
+        """
+        Compute the meridian convergence (gamma) at a point (x, y).
+
+        Parameters
+        ----------
+        x : float. Easting (meters).
+        y : float. Northing (meters).
+        lat0 : float. Latitude of the natural origin (radians).
+        false_easting: float. False easting to be subtracted from the easting coordinates
+        a : float, optional. Semi-major axis of the ellipsoid (meters). If not provided, uses instance attribute.
+        b : float, optional. Semi-minor axis of the ellipsoid (meters). If not provided, uses instance attribute.
+
+        Returns
+        -------
+        float. Meridian convergence (gamma) in radians.
+        """
+        a = a if a is not None else self.a
+        b = b if b is not None else self.b
+
+        x = x - false_easting
+
+        e2 = (a**2 - b**2) / a**2
+        latf = self.footlat(y, lat0, a, b)
+        N = a / np.sqrt(1 - e2 * np.sin(latf) ** 2)
+        eps2 = (e2 / (1 - e2)) * np.cos(latf) ** 2
+        gamma = (
+            (x * np.tan(latf) / N)
+            - ((x**3 * np.tan(latf)) / (3 * N**3)) * (1 + np.tan(latf) ** 2 - eps2 - 2 * eps2**2)
+        )
+        return gamma
 
 
 
@@ -182,5 +277,13 @@ if __name__ == "__main__":
     print("Mean radius:", ellipsoid.mean_radius)
     print("Surface area:", ellipsoid.surface_area())
     print("Mean radius for latitude:", ellipsoid.mean_radis_for_latitude(45, angle_unit='deg'))
+    print(f"Footpoint Latitude: {np.degrees(ellipsoid.footlat(1000000.0, np.radians(0.0))):.6f} degrees")
+
+
+    x,y = 555776.2667516097, 6651832.735433666
+    lat0 = 0
+    false_easting = 500000
+    gamma = ellipsoid.tm_conv(x, y, lat0, false_easting)
+    print(f"Meridian Convergence (gamma): {np.degrees(gamma):.6f} degrees")
 
 
