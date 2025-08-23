@@ -543,7 +543,7 @@ The forward projection transforms geographic coordinates $(\lambda, \phi)$ to pr
    M = a \left(A_0 \phi - A_2 \sin(2\phi) + A_4 \sin(4\phi) - A_6 \sin(6\phi)\right),
    $$
    where:
-   - $A_0, A_2, A_4, A_6$ are coefficients derived from the eccentricity.
+   - $A_0$, $A_2$, $A_4$, $A_6$ are coefficients derived from the eccentricity.
 
 2. Compute the easting and northing:
    $$
