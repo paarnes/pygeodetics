@@ -16,6 +16,8 @@ from .geodetics.ECEF2enu import ECEF2enu
 from .geodetics.geodetic_inverse_problem import geodetic_inverse_problem
 from .geodetics.geodetic_direct_problem import geodetic_direct_problem
 from .geodetics.radius_of_curvature_azimuth import radius_of_curvature_azimuth
+from .projections.MercatorVariantC import MercatorVariantC
+from .projections.TransverseMercator import TransverseMercator
 
 # Import main Geodetic class
 from Geodetic import Geodetic
@@ -31,5 +33,7 @@ __all__ = [
     "geodetic_inverse_problem",
     "geodetic_direct_problem",
     "radius_of_curvature_azimuth",
+    "MercatorVariantC",
+    "TransverseMercator",
     "Geodetic",
 ]
