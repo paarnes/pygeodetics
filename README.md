@@ -216,43 +216,35 @@ The iterative method for converting ECEF coordinates $(X, Y, Z)$ to geodetic coo
    $$\lambda=\arctan2(Y, X)$$
 
 2. Compute the intermediate values:
-   $$
-   p=\sqrt{X^2 + Y^2}, \quad \theta = \arctan\left(\frac{Z a}{p b}\right).
-   $$
+
+   $$p=\sqrt{X^2 + Y^2}, \quad \theta = \arctan\left(\frac{Z a}{p b}\right)$$
 
 3. Compute the latitude:
-   $$
-   \phi=\arctan\left(\frac{Z + e'^2 b \sin^3\theta}{p - e^2 a \cos^3\theta}\right),
-   $$
-   where $e'^2=\frac{a^2 - b^2}{b^2}$ is the second eccentricity squared.
+
+   $$\phi=\arctan\left(\frac{Z + e'^2 b \sin^3\theta}{p - e^2 a \cos^3\theta}\right)$$
+   ,where $e'^2=\frac{a^2 - b^2}{b^2}$ is the second eccentricity squared.
 
 4. Compute the height:
-   $$
-   h=\frac{p}{\cos\phi}-N.
-   $$
+
+   $$h=\frac{p}{\cos\phi}-N$$
 
 ### 3. Geodetic Inverse Problem
 
 The geodetic inverse problem calculates the geodesic distance $s$ and azimuths $(\alpha_1, \alpha_2)$ between two points $(\phi_1, \lambda_1)$ and $(\phi_2, \lambda_2)$. Using Vincenty's formulae:
 
 1. Compute the reduced latitude:
-   $$
-   \beta = \arctan\left((1 - f) \tan\phi\right),
-   $$
-   where $f = \frac{a - b}{a}$ is the flattening.
+
+   $$\beta=\arctan\left((1 - f) \tan\phi\right)$$
+   ,where $f = \frac{a - b}{a}$ is the flattening.
 
 2. Iteratively solve for the longitude difference $\Delta\lambda$ and the spherical arc $\sigma$:
-   $$
-   \sigma = \arctan\left(\frac{\sqrt{(\cos\beta_2 \sin\Delta\lambda)^2 + (\cos\beta_1 \sin\beta_2 - \sin\beta_1 \cos\beta_2 \cos\Delta\lambda)^2}}{\sin\beta_1 \sin\beta_2 + \cos\beta_1 \cos\beta_2 \cos\Delta\lambda}\right).
-   $$
+
+   $$\sigma = \arctan\left(\frac{\sqrt{(\cos\beta_2 \sin\Delta\lambda)^2 + (\cos\beta_1 \sin\beta_2 - \sin\beta_1 \cos\beta_2 \cos\Delta\lambda)^2}}{\sin\beta_1 \sin\beta_2 + \cos\beta_1 \cos\beta_2 \cos\Delta\lambda}\right)$$
 
 3. Compute the azimuths:
-   $$
-   \alpha_1 = \arctan2\left(\cos\beta_2 \sin\Delta\lambda, \cos\beta_1 \sin\beta_2 - \sin\beta_1 \cos\beta_2 \cos\Delta\lambda\right),
-   $$
-   $$
-   \alpha_2 = \arctan2\left(\cos\beta_1 \sin\Delta\lambda, -\sin\beta_1 \cos\beta_2 + \cos\beta_1 \sin\beta_2 \cos\Delta\lambda\right).
-   $$
+   $$\alpha_1 = \arctan2\left(\cos\beta_2 \sin\Delta\lambda, \cos\beta_1 \sin\beta_2 - \sin\beta_1 \cos\beta_2 \cos\Delta\lambda\right)$$
+
+   $$\alpha_2 = \arctan2\left(\cos\beta_1 \sin\Delta\lambda, -\sin\beta_1 \cos\beta_2 + \cos\beta_1 \sin\beta_2 \cos\Delta\lambda\right)$$
 
 4. Compute the geodesic distance:
    $$
