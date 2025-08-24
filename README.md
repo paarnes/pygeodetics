@@ -568,6 +568,7 @@ The forward projection transforms geographic coordinates $(\lambda, \phi)$ to pr
 2. **Compute the meridional arc distance from the equator to the projection origin**:
 
    If $\phi_0 = 0$
+   
    $$M_0 = 0$$
 
    or if $\phi_0 = 90^\circ , (\pi/2 , \text{radians})$
