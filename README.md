@@ -467,7 +467,7 @@ This section explains the mathematical foundation for the projections method sup
 
 #### 12.1 Mercator Variant C Projection
 
-The Mercator Variant C projection is a cylindrical map projection that preserves angles, making it conformal. It is commonly used for navigation and mapping.
+The Mercator Variant C projection is a cylindrical map projection that preserves angles, making it conformal.
 
 ##### 12.1.1 Forward Projection (Geographic to Projected)
 
