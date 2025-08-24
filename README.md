@@ -555,7 +555,7 @@ The forward projection transforms geographic coordinates $(\lambda, \phi)$ to pr
 
    $$n = \frac{f}{2 - f}$$
 
-   $$\quad B = \frac{a}{1 + n} \left(1 + \frac{n^2}{4} + \frac{n^4}{64}\right)$$
+   $$B = \frac{a}{1 + n} \left(1 + \frac{n^2}{4} + \frac{n^4}{64}\right)$$
 
    $$h_1=\frac{n}{2} - \frac{2}{3}n^2 + \frac{5}{16}n^3 + \frac{41}{180}n^4$$
 
@@ -563,11 +563,22 @@ The forward projection transforms geographic coordinates $(\lambda, \phi)$ to pr
 
    $$h_3=\frac{61}{240}n^3 - \frac{103}{140}n^4$$
 
-   $$\quad h_4=\frac{49561}{161280}n^4$$
+   $$h_4=\frac{49561}{161280}n^4$$
 
 2. **Compute the meridional arc distance from the equator to the projection origin**:
 
-   If $\phi_0 = 0$, then $M_0 = 0$. Otherwise:
+   If $\phi_0 = 0$
+   $$M_0 = 0$$
+
+   or if $\phi_0 = 90^\circ , (\pi/2 , \text{radians})$
+   
+   $$ M_0 = B \cdot \frac{\pi}{2} $$
+
+   or if $\phi_0 = -90^\circ , (-\pi/2 , \text{radians})$ 
+   
+   $$M_0 = B \cdot \left(-\frac{\pi}{2}\right)$$
+   
+   Otherwise:
 
    $$Q_0 = \sinh^{-1}(\tan\phi_0) - e \tanh^{-1}(e \sin\phi_0)$$
 
