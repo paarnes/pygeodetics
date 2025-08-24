@@ -572,7 +572,7 @@ The forward projection transforms geographic coordinates $(\lambda, \phi)$ to pr
 
    or if $\phi_0 = 90^\circ , (\pi/2 , \text{radians})$
    
-   $$ M_0 = B \cdot \frac{\pi}{2} $$
+   $$M_0 = B \cdot \frac{\pi}{2}$$
 
    or if $\phi_0 = -90^\circ , (-\pi/2 , \text{radians})$ 
    
