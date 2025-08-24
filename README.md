@@ -482,53 +482,83 @@ The following table summarizes the key parameters of the Mercator Variant C proj
 | Easting at false origin             | 8826               | No                | The easting value assigned to the false origin.                                                                                                                                                                 |
 | Northing at false origin            | 8827               | No                | The northing value assigned to the false origin.                                                                                                                   
 
-##### 12.1.1 Forward Projection (Geographic to Projected)
+### 12.1.1 Forward Projection (Geographic → Projected)
 
-The forward projection transforms geographic coordinates $(\lambda, \phi)$ (longitude, latitude) to projected coordinates $(E, N)$ (easting, northing) as follows:
+The forward projection transforms geographic coordinates $(\lambda, \phi)$ (longitude, latitude) to projected coordinates $(E, N)$ (easting, northing).  
 
-1. Compute the projection constant $k_0$:
+- Constants:  
+  - $k_0 = \frac{\cos \phi_1}{\sqrt{1 - e^2 \sin^2 \phi_1}}$  
+  - $B = e \approx 2.7182818…$ (base of natural logarithm)  
+- All logarithms are **natural**.
 
-   $$k_0=\frac{\cos\phi_1}{\sqrt{1 - e^2 \sin^2\phi_1}}$$
-   
-   where:
-   - $\phi_1$ is the latitude of the first standard parallel,
-   - $e^2 = \frac{a^2 - b^2}{a^2}$ is the first eccentricity squared.
+1. **Compute the projection constant $k_0$:**
 
-2. Compute the meridional arc $M$:
-
-   $$M(\phi)=a k_0 \ln\left(\tan\left(\frac{\pi}{4} + \frac{\phi}{2}\right) \cdot \left(\frac{1 - e \sin\phi}{1 + e \sin\phi}\right)^{\frac{e}{2}}\right),
+   $$
+   k_0 = \frac{\cos \phi_1}{\sqrt{1 - e^2 \sin^2 \phi_1}}
    $$
 
    where:
-   - $a$ is the semi-major axis,
-   - $e$ is the eccentricity.
+   - $\phi_1$ = latitude of the first standard parallel (absolute value, positive),
+   - $e^2 = \tfrac{a^2 - b^2}{a^2}$ = eccentricity squared,
+   - $a$ = semi-major axis, $b$ = semi-minor axis.
 
-3. Compute the easting and northing:
+2. **Compute the meridional arc at latitude $\phi$:**
 
-   $$E=E_0 + a k_0 (\lambda - \lambda_0)$$
+   $$
+   M(\phi) = a k_0 \,\ln \left[
+   \tan\!\left(\tfrac{\pi}{4} + \tfrac{\phi}{2}\right) 
+   \left(\frac{1 - e \sin\phi}{1 + e \sin\phi}\right)^{\tfrac{e}{2}}
+   \right]
+   $$
 
-   $$N = N_0 + M(\phi) - M(\phi_0)$$
+3. **Compute Easting and Northing:**
 
-   where:
-   - $\lambda_0$ is the longitude of the false origin,
-   - $\phi_0$ is the latitude of the false origin,
-   - $E_0$ and $N_0$ are the false easting and northing.
+   $$
+   E = E_0 + a k_0 (\lambda - \lambda_0)
+   $$
 
-##### 12.1.2 Inverse Projection (Projected to Geographic)
-
-The inverse projection transforms projected coordinates $(E, N)$ back to geographic coordinates $(\lambda, \phi)$:
-
-1. Compute the longitude:
-
-   $$\lambda = \lambda_0 + \frac{E - E_0}{a k_0}$$
-
-2. Compute the latitude iteratively:
-   
-   $$\phi = \chi + \sum_{n=1}^4 c_n \sin(2n\chi)$$
+   $$
+   N = N_0 - M(\phi_0) + M(\phi)
+   $$
 
    where:
-   - $\chi = \frac{\pi}{2} - 2 \arctan\left(e^{-\frac{N - N_0 + M(\phi_0)}{a k_0}}\right)$,
-   - $c_n$ are coefficients derived from the eccentricity.
+   - $(\lambda_0, \phi_0)$ = longitude/latitude of the false origin,
+   - $(E_0, N_0)$ = false easting and northing.
+
+---
+
+### 12.1.2 Inverse Projection (Projected → Geographic)
+
+The inverse projection transforms projected coordinates $(E, N)$ back to geographic $(\lambda, \phi)$.
+
+1. **Longitude:**
+
+   $$
+   \lambda = \lambda_0 + \frac{E - E_0}{a k_0}
+   $$
+
+2. **Latitude (iterative series):**
+
+   Define:
+   $$
+   \chi = \frac{\pi}{2} - 2 \arctan \!\left( 
+   \exp\!\left[-\frac{N - N_0 + M(\phi_0)}{a k_0}\right] 
+   \right)
+   $$
+
+   Then:
+   $$
+   \phi = \chi 
+   + \left(\tfrac{e^2}{2} + \tfrac{5 e^4}{24} + \tfrac{e^6}{12} + \tfrac{13 e^8}{360}\right) \sin(2\chi)
+   + \left(\tfrac{7 e^4}{48} + \tfrac{29 e^6}{240} + \tfrac{811 e^8}{11520}\right) \sin(4\chi)
+   + \left(\tfrac{7 e^6}{120} + \tfrac{81 e^8}{1120}\right) \sin(6\chi)
+   + \left(\tfrac{4279 e^8}{161280}\right) \sin(8\chi)
+   $$
+
+---
+
+---
+
 
 #### 12.2 Transverse Mercator Projection
 
@@ -644,6 +674,9 @@ The inverse projection transforms projected coordinates $(E, N)$ back to geograp
    $$\lambda = \lambda_0 + \sin^{-1}\left(\frac{\tanh\eta_0'}{\cos\beta'}\right)$$
 
 
+### EPSG Reference
+
+- These formulas follow **EPSG Guidance Note 7-2**.  
 
 ## License
 This project is licensed under the MIT License.
