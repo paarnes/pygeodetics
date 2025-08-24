@@ -180,6 +180,68 @@ mradius = Geodetic().nrad(lat)
 print(f"Normal Radius of the Ellipsoid at Latitude {lat}°:\n{mradius:.3f} meters")
 ```
 
+### Use of Mercator Variant C projection
+```python
+
+from pygeodetics import MercatorVariantC
+import numpy as np
+
+conv = MercatorVariantC(
+    a=6378245.0, f=1/298.3,
+    latSP1=np.deg2rad(42), latFO=np.deg2rad(42), lonFO=np.deg2rad(51),
+    EFO=0.0, NFO=0.0
+)
+
+lon, lat = 53, 53
+E, N = conv.geog_to_projected([[lon, lat]], unit="deg").ravel()
+rlon, rlat = conv.projected_to_geog([[E, N]]).ravel()
+
+print(f"Easting = {E:.2f} m\nNorthing = {N:.2f} m")
+print(f"Reversed lon = {rlon:.8f}°\nReversed lat = {rlat:.8f}°")
+```
+
+
+### Use of Transverse Mercator projection
+
+```python
+import numpy as np
+from pygeodetics import TransverseMercator
+np.set_printoptions(precision=8, suppress=True)
+
+# Projection parameters (radians for origins)
+lat_origin = 0.0                         # φ0 (rad)
+lon_origin = np.radians(9.0)             # λ0 (rad), e.g. UTM zone 32
+scale_factor = 0.9996                    # k0
+false_easting = 500000.0                 # FE (m)
+false_northing = 0.0                     # FN (m)
+
+# Ellipsoid (WGS84)
+a = 6378137.0
+f = 1 / 298.257223563
+
+tm = TransverseMercator(
+    lat_origin, lon_origin, scale_factor,
+    false_easting, false_northing, a, f
+)
+
+# Input coordinates (lon, lat, h) 
+coords = np.array([
+    [3.0, 60.0, 100.0],
+    [3.2, 61.0, 102.0],
+])
+
+# Perform forward projection
+easting, northing, height = tm.geog_to_projected(coords, unit="deg")
+results = np.vstack((easting, northing, height)).T
+print(f"\nProjected Coordinates TM:\n{results}")
+
+# Perform inverse projection
+proj_coordinates = np.vstack([easting, northing, height]).T
+lon_back, lat_back, height = tm.projected_to_geog(proj_coordinates, unit="deg")
+results = np.vstack((lon_back, lat_back, height)).T
+print(f"\nGeographic Coordinates TM:\n{results}")
+
+```
 
 
 ## Math and the Theory Basis
