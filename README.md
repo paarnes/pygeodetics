@@ -468,6 +468,19 @@ This section explains the mathematical foundation for the projections method sup
 #### 12.1 Mercator Variant C Projection
 
 The Mercator Variant C projection is a cylindrical map projection that preserves angles, making it conformal.
+This projection is a variant of the Mercator projection, with specific parameters defined for its implementation.
+
+##### Parameters of the Mercator Variant C Projection
+
+The following table summarizes the key parameters of the Mercator Variant C projection as defined by EPSG:
+
+| **Parameter Name**                  | **Parameter EPSG Code** | **Sign Reversal** | **Description**                                                                                                                                                                                                 |
+|-------------------------------------|--------------------|-------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Latitude of 1st standard parallel   | 8823               | No                | For a conic projection with two standard parallels, this is the latitude of one of the parallels of intersection of the cone with the ellipsoid. Scale is true along this parallel.                              |
+| Longitude of natural origin         | 8802               | No                | The longitude of the point from which the values of both the geographical coordinates on the ellipsoid and the grid coordinates on the projection are deemed to increment or decrement for computational purposes. |
+| Latitude of false origin            | 8821               | No                | The latitude of the point which is not the natural origin and at which grid coordinate values false easting and false northing are defined.                                                                     |
+| Easting at false origin             | 8826               | No                | The easting value assigned to the false origin.                                                                                                                                                                 |
+| Northing at false origin            | 8827               | No                | The northing value assigned to the false origin.                                                                                                                   
 
 ##### 12.1.1 Forward Projection (Geographic to Projected)
 
@@ -520,6 +533,19 @@ The inverse projection transforms projected coordinates $(E, N)$ back to geograp
 #### 12.2 Transverse Mercator Projection
 
 The Transverse Mercator (TM) projection is a conformal map projection widely used for large-scale mapping, such as the Universal Transverse Mercator (UTM) system.
+
+#### Parameters of the Transverse Mercator Projection
+
+The following table summarizes the key parameters of the Transverse Mercator projection as defined by EPSG:
+
+| **Parameter Name**               | **Parameter EPSG Code** | **Sign Reversal** | **Description**                                                                                                                                                                                                 |
+|----------------------------------|--------------------|-------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Latitude of natural origin       | 8801               | No                | The latitude of the point from which the values of both the geographical coordinates on the ellipsoid and the grid coordinates on the projection are deemed to increment or decrement for computational purposes. |
+| Longitude of natural origin      | 8802               | No                | The longitude of the point from which the values of both the geographical coordinates on the ellipsoid and the grid coordinates on the projection are deemed to increment or decrement for computational purposes. |
+| Scale factor at natural origin   | 8805               | No                | The factor by which the map grid is reduced or enlarged during the projection process, defined by its value at the natural origin.                                                                              |
+| False easting                    | 8806               | No                | The value assigned to the abscissa (east or west) axis of the projection grid at the natural origin to avoid negative coordinates over parts of the mapped area.                                                |
+| False northing                   | 8807               | No                | The value assigned to the ordinate (north or south) axis of the projection grid at the natural origin to avoid negative coordinates over parts of the mapped area.                                              |
+
 
 ##### 12.2.1 Forward Projection (Geographic to Projected)
 
