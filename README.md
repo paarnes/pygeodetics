@@ -212,6 +212,7 @@ where:
 The iterative method for converting ECEF coordinates $(X, Y, Z)$ to geodetic coordinates $(\phi, \lambda, h)$ involves:
 
 1. Compute the longitude:
+
    $$\lambda=\arctan2(Y, X)$$
 
 2. Compute the intermediate values:
