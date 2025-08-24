@@ -303,23 +303,19 @@ Vincenty's formula is used to calculate the geodesic distance between two points
 
 1. **Reduced Latitude**:
    Compute the reduced latitudes:
-   
-   $$
-   U_1 = \arctan\left((1 - f) \tan\phi_1\right), \quad U_2 = \arctan\left((1 - f) \tan\phi_2\right),
-   $$
-   where $f = \frac{a - b}{a}$ is the flattening.
+
+   $$U_1=\arctan\left((1 - f) \tan\phi_1\right), \quad U_2 = \arctan\left((1 - f) \tan\phi_2\right)$$
+   ,where $f = \frac{a - b}{a}$ is the flattening.
 
 2. **Longitude Difference**:
    Compute the difference in longitudes:
-   $$
-   L = \lambda_2 - \lambda_1.
-   $$
+
+   $$L=\lambda_2 - \lambda_1$$
 
 3. **Iterative Solution**:
    Initialize $\lambda = L$ and iteratively solve for $\lambda$ using:
-   $$
-   \lambda = L + (1 - C) f \sin\alpha \left[\sigma + C \sin\sigma \left(\cos2\sigma_m + C \cos\sigma \left(-1 + 2 \cos^2 2\sigma_m\right)\right)\right],
-   $$
+   
+   $$\lambda=L + (1 - C) f \sin\alpha \left[\sigma + C \sin\sigma \left(\cos2\sigma_m + C \cos\sigma \left(-1 + 2 \cos^2 2\sigma_m\right)\right)\right]$$
    where:
    - $\sigma = \arctan2\left(\sqrt{(\cos U_2 \sin\lambda)^2 + (\cos U_1 \sin U_2 - \sin U_1 \cos U_2 \cos\lambda)^2}, \sin U_1 \sin U_2 + \cos U_1 \cos U_2 \cos\lambda\right)$,
    - $\sin\alpha = \frac{\cos U_1 \cos U_2 \sin\lambda}{\sin\sigma}$,
@@ -330,23 +326,20 @@ Vincenty's formula is used to calculate the geodesic distance between two points
 
 4. **Geodesic Distance**:
    Compute the geodesic distance:
-   $$
-   s = b A \left[\sigma - \delta\sigma\right],
-   $$
-   where:
-   - $u^2 = \frac{\cos^2\alpha (a^2 - b^2)}{b^2}$,
-   - $A = 1 + \frac{u^2}{16384} \left(4096 + u^2 \left(-768 + u^2 (320 - 175 u^2)\right)\right)$,
-   - $B = \frac{u^2}{1024} \left(256 + u^2 \left(-128 + u^2 (74 - 47 u^2)\right)\right)$,
-   - $\delta\sigma = B \sin\sigma \left[\cos2\sigma_m + \frac{B}{4} \left(\cos\sigma \left(-1 + 2 \cos^2 2\sigma_m\right) - \frac{B}{6} \cos2\sigma_m \left(-3 + 4 \sin^2\sigma\right) \left(-3 + 4 \cos^2 2\sigma_m\right)\right)\right]$.
+
+   $$s=b A \left[\sigma - \delta\sigma\right]$$
+   ,where:
+   - $u^2=\frac{\cos^2\alpha (a^2 - b^2)}{b^2}$,
+   - $A=1 + \frac{u^2}{16384} \left(4096 + u^2 \left(-768 + u^2 (320 - 175 u^2)\right)\right)$,
+   - $B=\frac{u^2}{1024} \left(256 + u^2 \left(-128 + u^2 (74 - 47 u^2)\right)\right)$,
+   - $\delta\sigma=B \sin\sigma \left[\cos2\sigma_m + \frac{B}{4} \left(\cos\sigma \left(-1 + 2 \cos^2 2\sigma_m\right) - \frac{B}{6} \cos2\sigma_m \left(-3 + 4 \sin^2\sigma\right) \left(-3 + 4 \cos^2 2\sigma_m\right)\right)\right]$.
 
 5. **Azimuths**:
    Compute the forward and reverse azimuths:
-   $$
-   \alpha_1 = \arctan2\left(\cos U_2 \sin\lambda, \cos U_1 \sin U_2 - \sin U_1 \cos U_2 \cos\lambda\right),
-   $$
-   $$
-   \alpha_2 = \arctan2\left(\cos U_1 \sin\lambda, -\sin U_1 \cos U_2 + \cos U_1 \sin U_2 \cos\lambda\right).
-   $$
+   
+   $$\alpha_1 = \arctan2\left(\cos U_2 \sin\lambda, \cos U_1 \sin U_2 - \sin U_1 \cos U_2 \cos\lambda\right)$$
+
+   $$\alpha_2 = \arctan2\left(\cos U_1 \sin\lambda, -\sin U_1 \cos U_2 + \cos U_1 \sin U_2 \cos\lambda\right)$$
 
 Vincenty's formula is highly accurate for most geodetic calculations but may fail to converge for nearly antipodal points.
 
@@ -354,9 +347,7 @@ Vincenty's formula is highly accurate for most geodetic calculations but may fai
 
 The meridional radius of curvature, denoted as $M$, represents the radius of curvature in the north-south direction along a meridian. It is computed as:
 
-$$
-M = \frac{a(1 - e^2)}{(1 - e^2 \sin^2\phi)^{3/2}},
-$$
+$$M=\frac{a(1 - e^2)}{(1 - e^2 \sin^2\phi)^{3/2}}$$
 
 where:
 - $a$ is the semi-major axis of the ellipsoid,
