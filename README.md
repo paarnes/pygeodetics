@@ -317,6 +317,7 @@ Vincenty's formula is used to calculate the geodesic distance between two points
    Initialize $\lambda = L$ and iteratively solve for $\lambda$ using:
    
    $$\lambda=L + (1 - C) f \sin\alpha \left[\sigma + C \sin\sigma \left(\cos2\sigma_m + C \cos\sigma \left(-1 + 2 \cos^2 2\sigma_m\right)\right)\right]$$
+
    where:
    - $\sigma = \arctan2\left(\sqrt{(\cos U_2 \sin\lambda)^2 + (\cos U_1 \sin U_2 - \sin U_1 \cos U_2 \cos\lambda)^2}, \sin U_1 \sin U_2 + \cos U_1 \cos U_2 \cos\lambda\right)$,
    - $\sin\alpha = \frac{\cos U_1 \cos U_2 \sin\lambda}{\sin\sigma}$,
@@ -458,9 +459,11 @@ where:
 - $x$ is the easting coordinate (adjusted for false easting),
 - $R$ is the radius of the sphere.
 
-### 12. Projection
+### 12. Projections
 
-This section explains the mathematical foundation for the Mercator Variant C and Transverse Mercator projections.
+This section explains the mathematical foundation for the projections method supported by the library. In this release supported methods are:
+ - Mercator Variant C 
+ - Transverse Mercator projections.
 
 #### 12.1 Mercator Variant C Projection
 
@@ -471,28 +474,28 @@ The Mercator Variant C projection is a cylindrical map projection that preserves
 The forward projection transforms geographic coordinates $(\lambda, \phi)$ (longitude, latitude) to projected coordinates $(E, N)$ (easting, northing) as follows:
 
 1. Compute the projection constant $k_0$:
-   $$
-   k_0 = \frac{\cos\phi_1}{\sqrt{1 - e^2 \sin^2\phi_1}},
-   $$
+
+   $$k_0=\frac{\cos\phi_1}{\sqrt{1 - e^2 \sin^2\phi_1}}$$
+   
    where:
    - $\phi_1$ is the latitude of the first standard parallel,
    - $e^2 = \frac{a^2 - b^2}{a^2}$ is the first eccentricity squared.
 
 2. Compute the meridional arc $M$:
+
+   $$M(\phi)=a k_0 \ln\left(\tan\left(\frac{\pi}{4} + \frac{\phi}{2}\right) \cdot \left(\frac{1 - e \sin\phi}{1 + e \sin\phi}\right)^{\frac{e}{2}}\right),
    $$
-   M(\phi) = a k_0 \ln\left(\tan\left(\frac{\pi}{4} + \frac{\phi}{2}\right) \cdot \left(\frac{1 - e \sin\phi}{1 + e \sin\phi}\right)^{\frac{e}{2}}\right),
-   $$
+
    where:
    - $a$ is the semi-major axis,
    - $e$ is the eccentricity.
 
 3. Compute the easting and northing:
-   $$
-   E = E_0 + a k_0 (\lambda - \lambda_0),
-   $$
-   $$
-   N = N_0 + M(\phi) - M(\phi_0),
-   $$
+
+   $$E=E_0 + a k_0 (\lambda - \lambda_0)$$
+
+   $$N = N_0 + M(\phi) - M(\phi_0)$$
+
    where:
    - $\lambda_0$ is the longitude of the false origin,
    - $\phi_0$ is the latitude of the false origin,
@@ -503,14 +506,13 @@ The forward projection transforms geographic coordinates $(\lambda, \phi)$ (long
 The inverse projection transforms projected coordinates $(E, N)$ back to geographic coordinates $(\lambda, \phi)$:
 
 1. Compute the longitude:
-   $$
-   \lambda = \lambda_0 + \frac{E - E_0}{a k_0}.
-   $$
+
+   $$\lambda = \lambda_0 + \frac{E - E_0}{a k_0}$$
 
 2. Compute the latitude iteratively:
-   $$
-   \phi = \chi + \sum_{n=1}^4 c_n \sin(2n\chi),
-   $$
+   
+   $$\phi = \chi + \sum_{n=1}^4 c_n \sin(2n\chi)$$
+
    where:
    - $\chi = \frac{\pi}{2} - 2 \arctan\left(e^{-\frac{N - N_0 + M(\phi_0)}{a k_0}}\right)$,
    - $c_n$ are coefficients derived from the eccentricity.
@@ -524,19 +526,18 @@ The Transverse Mercator (TM) projection is a conformal map projection widely use
 The forward projection transforms geographic coordinates $(\lambda, \phi)$ to projected coordinates $(E, N)$:
 
 1. Compute the meridional arc $M$:
-   $$
-   M = a \left(A_0 \phi - A_2 \sin(2\phi) + A_4 \sin(4\phi) - A_6 \sin(6\phi)\right),
-   $$
+
+   $$M=a \left(A_0 \phi - A_2 \sin(2\phi) + A_4 \sin(4\phi) - A_6 \sin(6\phi)\right)$$
+   
    where:
    - $A_0$, $A_2$, $A_4$, $A_6$ are coefficients derived from the eccentricity.
 
 2. Compute the easting and northing:
-   $$
-   E = E_0 + k_0 N \eta,
-   $$
-   $$
-   N = N_0 + k_0 \left(M - M_0 + \frac{\nu}{2} \sin\phi \cos\phi \eta^2 + \frac{\nu}{24} \sin\phi \cos^3\phi (5 - \tan^2\phi + 9\epsilon^2) \eta^4\right),
-   $$
+   
+   $$E=E_0 + k_0 N \eta$$
+   
+   $$N=N_0 + k_0 \left(M - M_0 + \frac{\nu}{2} \sin\phi \cos\phi \eta^2 + \frac{\nu}{24} \sin\phi \cos^3\phi (5 - \tan^2\phi + 9\epsilon^2) \eta^4\right)$$
+
    where:
    - $\eta = \lambda - \lambda_0$,
    - $\nu = \frac{a}{\sqrt{1 - e^2 \sin^2\phi}}$ is the radius of curvature in the prime vertical,
@@ -547,21 +548,19 @@ The forward projection transforms geographic coordinates $(\lambda, \phi)$ to pr
 The inverse projection transforms projected coordinates $(E, N)$ back to geographic coordinates $(\lambda, \phi)$:
 
 1. Compute the footpoint latitude $\phi_f$:
-   $$
-   \phi_f = \frac{N - N_0}{a A_0}.
-   $$
+
+   $$\phi_f = \frac{N - N_0}{a A_0}$$
 
 2. Compute the latitude iteratively:
-   $$
-   \phi = \phi_f + \sum_{n=1}^4 b_n \sin(2n\phi_f),
-   $$
+   
+   $$\phi = \phi_f + \sum_{n=1}^4 b_n \sin(2n\phi_f)$$
+   
    where:
    - $b_n$ are coefficients derived from the eccentricity.
 
 3. Compute the longitude:
-   $$
-   \lambda = \lambda_0 + \frac{E - E_0}{k_0 \nu}.
-   $$
+   
+   $$\lambda = \lambda_0 + \frac{E - E_0}{k_0 \nu}$$
 
 
 
