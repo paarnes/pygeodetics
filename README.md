@@ -549,44 +549,131 @@ The following table summarizes the key parameters of the Transverse Mercator pro
 
 ##### 12.2.1 Forward Projection (Geographic to Projected)
 
-The forward projection transforms geographic coordinates $(\lambda, \phi)$ to projected coordinates $(E, N)$:
+The forward projection transforms geographic coordinates $(\lambda, \phi)$ to projected coordinates $(E, N)$ as follows:
 
-1. Compute the meridional arc $M$:
+1. **Calculate constants for the projection**:
 
-   $$M=a \left(A_0 \phi - A_2 \sin(2\phi) + A_4 \sin(4\phi) - A_6 \sin(6\phi)\right)$$
-   
-   where:
-   - $A_0$, $A_2$, $A_4$, $A_6$ are coefficients derived from the eccentricity.
+   $$
+   n = \frac{f}{2 - f}
+   $$
 
-2. Compute the easting and northing:
-   
-   $$E=E_0 + k_0 N \eta$$
-   
-   $$N=N_0 + k_0 \left(M - M_0 + \frac{\nu}{2} \sin\phi \cos\phi \eta^2 + \frac{\nu}{24} \sin\phi \cos^3\phi (5 - \tan^2\phi + 9\epsilon^2) \eta^4\right)$$
+   $$\quad B = \frac{a}{1 + n} \left(1 + \frac{n^2}{4} + \frac{n^4}{64}\right)$$
 
-   where:
-   - $\eta = \lambda - \lambda_0$,
-   - $\nu = \frac{a}{\sqrt{1 - e^2 \sin^2\phi}}$ is the radius of curvature in the prime vertical,
-   - $\epsilon^2 = \frac{e^2}{1 - e^2} \cos^2\phi$ is the second eccentricity squared.
+   $$h_1 = \frac{n}{2} - \frac{2}{3}n^2 + \frac{5}{16}n^3 + \frac{41}{180}n^4$$
+
+   $$h_2 = \frac{13}{48}n^2 - \frac{3}{5}n^3 + \frac{557}{1440}n^4$$
+
+   $$h_3 = \frac{61}{240}n^3 - \frac{103}{140}n^4$$
+
+   $$\quad h_4 = \frac{49561}{161280}n^4$$
+
+2. **Compute the meridional arc distance from the equator to the projection origin**:
+
+   If $\phi_0 = 0$, then $M_0 = 0$. Otherwise:
+
+   $$
+   Q_0 = \sinh^{-1}(\tan\phi_0) - e \tanh^{-1}(e \sin\phi_0),
+   $$
+
+   $$
+   \beta_0 = \tan^{-1}(\sinh Q_0),
+   $$
+
+   $$
+   \xi_{0,0} = \sin^{-1}(\sin\beta_0),
+   $$
+
+   $$
+   \xi_0 = \xi_{0,0} + h_1 \sin(2\xi_{0,0}) + h_2 \sin(4\xi_{0,0}) + h_3 \sin(6\xi_{0,0}) + h_4 \sin(8\xi_{0,0}),
+   $$
+
+   $$
+   M_0 = B \xi_0.
+   $$
+
+3. **Compute intermediate values for the given latitude $\phi$**:
+
+   $$
+   Q = \sinh^{-1}(\tan\phi) - e \tanh^{-1}(e \sin\phi),
+   $$
+
+   $$
+   \beta = \tan^{-1}(\sinh Q),
+   $$
+
+   $$
+   \eta_0 = \tanh^{-1}(\cos\beta \sin(\lambda - \lambda_0)),
+   $$
+
+   $$
+   \xi_0 = \sin^{-1}(\sin\beta \cosh\eta_0),
+   $$
+
+   $$
+   \xi = \xi_0 + h_1 \sin(2\xi_0) \cosh(2\eta_0) + h_2 \sin(4\xi_0) \cosh(4\eta_0) + h_3 \sin(6\xi_0) \cosh(6\eta_0) + h_4 \sin(8\xi_0) \cosh(8\eta_0),
+   $$
+
+   $$
+   \eta = \eta_0 + h_1 \cos(2\xi_0) \sinh(2\eta_0) + h_2 \cos(4\xi_0) \sinh(4\eta_0) + h_3 \cos(6\xi_0) \sinh(6\eta_0) + h_4 \cos(8\xi_0) \sinh(8\eta_0).
+   $$
+
+4. **Compute the easting and northing**:
+
+   $$
+   E = E_0 + k_0 B \eta,
+   $$
+
+   $$
+   N = N_0 + k_0 \left(B \xi - M_0\right).
+   $$
 
 ##### 12.2.2 Inverse Projection (Projected to Geographic)
 
-The inverse projection transforms projected coordinates $(E, N)$ back to geographic coordinates $(\lambda, \phi)$:
+The inverse projection transforms projected coordinates $(E, N)$ back to geographic coordinates $(\lambda, \phi)$ as follows:
 
-1. Compute the footpoint latitude $\phi_f$:
+1. **Compute intermediate values**:
 
-   $$\phi_f = \frac{N - N_0}{a A_0}$$
+   $$
+   \eta' = \frac{E - E_0}{k_0 B}, \quad \xi' = \frac{(N - N_0) + k_0 M_0}{k_0 B}.
+   $$
 
-2. Compute the latitude iteratively:
-   
-   $$\phi = \phi_f + \sum_{n=1}^4 b_n \sin(2n\phi_f)$$
-   
-   where:
-   - $b_n$ are coefficients derived from the eccentricity.
+2. **Iteratively compute $\xi_0'$ and $\eta_0'$**:
 
-3. Compute the longitude:
-   
-   $$\lambda = \lambda_0 + \frac{E - E_0}{k_0 \nu}$$
+   $$
+   \xi_0' = \xi' - \left(h_1 \sin(2\xi') \cosh(2\eta') + h_2 \sin(4\xi') \cosh(4\eta') + h_3 \sin(6\xi') \cosh(6\eta') + h_4 \sin(8\xi') \cosh(8\eta')\right),
+   $$
+
+   $$
+   \eta_0' = \eta' - \left(h_1 \cos(2\xi') \sinh(2\eta') + h_2 \cos(4\xi') \sinh(4\eta') + h_3 \cos(6\xi') \sinh(6\eta') + h_4 \cos(8\xi') \sinh(8\eta')\right).
+   $$
+
+3. **Compute $\beta'$ and $Q'$**:
+
+   $$
+   \beta' = \sin^{-1}\left(\frac{\sin\xi_0'}{\cosh\eta_0'}\right),
+   $$
+
+   $$
+   Q' = \sinh^{-1}(\tan\beta').
+   $$
+
+4. **Iteratively compute latitude $\phi$**:
+
+   $$
+   Q'' = Q' + e \tanh^{-1}(e \tanh Q'),
+   $$
+
+   Repeat until the change in $Q''$ is insignificant. Then:
+
+   $$
+   \phi = \tan^{-1}(\sinh Q'').
+   $$
+
+5. **Compute longitude $\lambda$**:
+
+   $$
+   \lambda = \lambda_0 + \sin^{-1}\left(\frac{\tanh\eta_0'}{\cos\beta'}\right).
+   $$
 
 
 
