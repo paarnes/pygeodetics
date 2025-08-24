@@ -242,15 +242,15 @@ The geodetic inverse problem calculates the geodesic distance $s$ and azimuths $
    $$\sigma = \arctan\left(\frac{\sqrt{(\cos\beta_2 \sin\Delta\lambda)^2 + (\cos\beta_1 \sin\beta_2 - \sin\beta_1 \cos\beta_2 \cos\Delta\lambda)^2}}{\sin\beta_1 \sin\beta_2 + \cos\beta_1 \cos\beta_2 \cos\Delta\lambda}\right)$$
 
 3. Compute the azimuths:
+
    $$\alpha_1 = \arctan2\left(\cos\beta_2 \sin\Delta\lambda, \cos\beta_1 \sin\beta_2 - \sin\beta_1 \cos\beta_2 \cos\Delta\lambda\right)$$
 
    $$\alpha_2 = \arctan2\left(\cos\beta_1 \sin\Delta\lambda, -\sin\beta_1 \cos\beta_2 + \cos\beta_1 \sin\beta_2 \cos\Delta\lambda\right)$$
 
 4. Compute the geodesic distance:
-   $$
-   s = b \left(\sigma - \frac{f}{4} \sin\sigma \cos(2\sigma_m + \sigma)\right),
-   $$
-   where $\sigma_m = \frac{\sigma_1 + \sigma_2}{2}$.
+
+   $$s=b \left(\sigma - \frac{f}{4} \sin\sigma \cos(2\sigma_m + \sigma)\right)$$
+   ,where $\sigma_m = \frac{\sigma_1 + \sigma_2}{2}$.
 
 ### 4. Radius of Curvature
 
@@ -269,9 +269,7 @@ $$
 e \\
 n \\
 u
-\end{bmatrix}
-=
-\begin{bmatrix}
+\end{bmatrix}=\begin{bmatrix}
 -\sin\lambda & \cos\lambda & 0 \\
 -\sin\phi\cos\lambda & -\sin\phi\sin\lambda & \cos\phi \\
 \cos\phi\cos\lambda & \cos\phi\sin\lambda & \sin\phi
@@ -290,6 +288,7 @@ where $(X_0, Y_0, Z_0)$ are the ECEF coordinates of the reference point.
 ### 6. Mean Radius of the Ellipsoid
 
 The mean radius of the ellipsoid is computed as:
+
 $$
 R = \frac{2a + b}{3}.
 $$
