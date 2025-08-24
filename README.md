@@ -535,11 +535,8 @@ The inverse projection transforms projected coordinates $(E, N)$ back to geograp
    \right)$$
 
    Then:
-   $$\phi = \chi 
-   + \left(\tfrac{e^2}{2} + \tfrac{5 e^4}{24} + \tfrac{e^6}{12} + \tfrac{13 e^8}{360}\right) \sin(2\chi)
-   + \left(\tfrac{7 e^4}{48} + \tfrac{29 e^6}{240} + \tfrac{811 e^8}{11520}\right) \sin(4\chi)
-   + \left(\tfrac{7 e^6}{120} + \tfrac{81 e^8}{1120}\right) \sin(6\chi)
-   + \left(\tfrac{4279 e^8}{161280}\right) \sin(8\chi)$$
+   
+   $$\phi=\chi+\left(\tfrac{e^2}{2} + \tfrac{5 e^4}{24} + \tfrac{e^6}{12} + \tfrac{13 e^8}{360}\right) \sin(2\chi)+\left(\tfrac{7 e^4}{48} +\tfrac{29 e^6}{240} + \tfrac{811 e^8}{11520}\right) \sin(4\chi)+\left(\tfrac{7 e^6}{120} + \tfrac{81 e^8}{1120}\right) \sin(6\chi)+\left(\tfrac{4279 e^8}{161280}\right) \sin(8\chi)$$
 
 ---
 
