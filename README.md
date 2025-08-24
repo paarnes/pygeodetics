@@ -273,7 +273,8 @@ $$
 
 The transformation from ECEF to local East-North-Up (ENU) coordinates is given by:
 
-$$\begin{bmatrix}
+$$
+\begin{bmatrix}
 e \\
 n \\
 u
@@ -288,7 +289,10 @@ u
 X - X_0 \\
 Y - Y_0 \\
 Z - Z_0
-\end{bmatrix}$$
+\end{bmatrix}
+$$
+
+
 
 where $(X_0, Y_0, Z_0)$ are the ECEF coordinates of the reference point.
 
