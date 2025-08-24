@@ -304,7 +304,8 @@ Vincenty's formula is used to calculate the geodesic distance between two points
 1. **Reduced Latitude**:
    Compute the reduced latitudes:
 
-   $$U_1=\arctan\left((1 - f) \tan\phi_1\right), \quad U_2 = \arctan\left((1 - f) \tan\phi_2\right)$$
+   $$U_1=\arctan\left((1 - f) \tan\phi_1\right), \quad U_2=\arctan\left((1 - f) \tan\phi_2\right)$$
+
    ,where $f = \frac{a - b}{a}$ is the flattening.
 
 2. **Longitude Difference**:
@@ -336,7 +337,7 @@ Vincenty's formula is used to calculate the geodesic distance between two points
 
 5. **Azimuths**:
    Compute the forward and reverse azimuths:
-   
+
    $$\alpha_1 = \arctan2\left(\cos U_2 \sin\lambda, \cos U_1 \sin U_2 - \sin U_1 \cos U_2 \cos\lambda\right)$$
 
    $$\alpha_2 = \arctan2\left(\cos U_1 \sin\lambda, -\sin U_1 \cos U_2 + \cos U_1 \sin U_2 \cos\lambda\right)$$
