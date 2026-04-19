@@ -7,7 +7,7 @@ email: per.helge.aarnes@gmail.com
 import numpy as np
 import pytest
 from pygeodesy.ellipsoidalVincenty import LatLon
-from pygeodetics.geodetics.Vincenty import vincenty_distance  # Replace `your_module` with the actual module name
+from pygeodetics.geodetics.Vincenty import vincenty_distance
 from pygeodetics.Ellipsoid import WGS84
 
 
