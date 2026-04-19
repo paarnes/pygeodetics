@@ -557,7 +557,7 @@ The following table summarizes the key parameters of the Mercator Variant C proj
 | Longitude of natural origin         | 8802               | No                | The longitude of the point from which the values of both the geographical coordinates on the ellipsoid and the grid coordinates on the projection are deemed to increment or decrement for computational purposes. |
 | Latitude of false origin            | 8821               | No                | The latitude of the point which is not the natural origin and at which grid coordinate values false easting and false northing are defined.                                                                     |
 | Easting at false origin             | 8826               | No                | The easting value assigned to the false origin.                                                                                                                                                                 |
-| Northing at false origin            | 8827               | No                | The northing value assigned to the false origin.                                                                                                                   
+| Northing at false origin            | 8827               | No                | The northing value assigned to the false origin.                                                                                                                                                                |
 
 ### 12.1.1 Forward Projection (Geographic → Projected)
 
