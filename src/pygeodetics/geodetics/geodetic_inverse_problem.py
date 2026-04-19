@@ -61,8 +61,9 @@ def geodetic_inverse_problem(
     dlon_new = lon2 - lon1
     dlon = dlon_new + 1.0  # force at least one iteration
 
+    max_iterations = 200
     iter_count = 0
-    while np.abs(dlon_new - dlon) > epsilon and iter_count < 200:
+    while np.abs(dlon_new - dlon) > epsilon and iter_count < max_iterations:
         dlon = dlon_new
 
         X = np.cos(beta1) * np.sin(beta2) - np.sin(beta1) * np.cos(beta2) * np.cos(dlon)
@@ -84,6 +85,11 @@ def geodetic_inverse_problem(
             K**2 * np.sin(sigma) * np.cos(sigma) * np.cos(2 * (sigma1 + sigma2))
         )
         iter_count += 1
+
+    if np.abs(dlon_new - dlon) > epsilon:
+        raise RuntimeError(
+            f"geodetic_inverse_problem did not converge within {max_iterations} iterations"
+        )
 
     dlon = dlon_new
     az2 = np.arctan2(np.cos(beta1) * np.sin(dlon),
