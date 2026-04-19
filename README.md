@@ -32,6 +32,8 @@ pip install pygeodetics
 - [Calculate the distance between two points on the ellipsoid (Vincenty formula)](#calculate-the-distance-between-two-points-on-the-ellipsoid-vincenty-formula)
 - [Calculate the meridional radius of curvature (M) at a given latitude](#calculate-the-meridional-radius-of-curvature-m-at-a-given-latitude)
 - [Calculate the normal radius of curvature (N) at a given latitude.](#calculate-the-normal-radius-of-curvature-n-at-a-given-latitude)
+- [Use of Mercator Variant C projection](#use-of-mercator-variant-c-projection)
+- [Use of Transverse Mercator projection](#use-of-transverse-mercator-projection)
 
 ## Usage Examples
 
@@ -293,27 +295,30 @@ PyGeodetics implements three solvers for the inverse problem $(X, Y, Z) \to (\ph
 
 ### 3. Geodetic Inverse Problem
 
-The geodetic inverse problem calculates the geodesic distance $s$ and azimuths $(\alpha_1, \alpha_2)$ between two points $(\phi_1, \lambda_1)$ and $(\phi_2, \lambda_2)$. Using Vincenty's formulae:
+The geodetic inverse problem calculates the geodesic distance $s$ and azimuths $(\alpha_1, \alpha_2)$ between two points $(\phi_1, \lambda_1)$ and $(\phi_2, \lambda_2)$. PyGeodetics solves it with Vincenty's formulae, which iterate on the auxiliary sphere using the *reduced* latitudes:
 
-1. Compute the reduced latitude:
+1. Compute the reduced latitudes (also called parametric latitudes):
 
-   $$\beta=\arctan\left((1 - f) \tan\phi\right)$$
+   $$U_1 = \arctan\left((1 - f) \tan\phi_1\right), \quad U_2 = \arctan\left((1 - f) \tan\phi_2\right)$$
    ,where $f = \frac{a - b}{a}$ is the flattening.
 
-2. Iteratively solve for the longitude difference $\Delta\lambda$ and the spherical arc $\sigma$:
+2. Set $L = \lambda_2 - \lambda_1$ and initialise $\lambda = L$. Iterate $\lambda$ (longitude on the auxiliary sphere) together with the angular distance $\sigma$:
 
-   $$\sigma = \arctan2\!\left(\sqrt{(\cos\beta_2 \sin\Delta\lambda)^2 + (\cos\beta_1 \sin\beta_2 - \sin\beta_1 \cos\beta_2 \cos\Delta\lambda)^2},\; \sin\beta_1 \sin\beta_2 + \cos\beta_1 \cos\beta_2 \cos\Delta\lambda\right)$$
+   $$\sigma = \arctan2\!\left(\sqrt{(\cos U_2 \sin\lambda)^2 + (\cos U_1 \sin U_2 - \sin U_1 \cos U_2 \cos\lambda)^2},\; \sin U_1 \sin U_2 + \cos U_1 \cos U_2 \cos\lambda\right)$$
 
-3. Compute the azimuths:
+   The full update equation for $\lambda$ and the auxiliary quantities $\sin\alpha$, $\cos 2\sigma_m$, $C$ are given in [Section 7](#7-vincentys-formula-for-geodesic-distance).
 
-   $$\alpha_1 = \arctan2\left(\cos\beta_2 \sin\Delta\lambda, \cos\beta_1 \sin\beta_2 - \sin\beta_1 \cos\beta_2 \cos\Delta\lambda\right)$$
+3. Once converged, compute the forward and reverse azimuths:
 
-   $$\alpha_2 = \arctan2\left(\cos\beta_1 \sin\Delta\lambda, -\sin\beta_1 \cos\beta_2 + \cos\beta_1 \sin\beta_2 \cos\Delta\lambda\right)$$
+   $$\alpha_1 = \arctan2\left(\cos U_2 \sin\lambda,\; \cos U_1 \sin U_2 - \sin U_1 \cos U_2 \cos\lambda\right)$$
 
-4. Compute the geodesic distance:
+   $$\alpha_2 = \arctan2\left(\cos U_1 \sin\lambda,\; -\sin U_1 \cos U_2 + \cos U_1 \sin U_2 \cos\lambda\right)$$
 
-   $$s=b \left(\sigma - \frac{f}{4} \sin\sigma \cos(2\sigma_m + \sigma)\right)$$
-   ,where $\sigma_m = \frac{\sigma_1 + \sigma_2}{2}$.
+4. Compute the geodesic distance using the series expansion in $u^2 = \cos^2\alpha\,(a^2 - b^2)/b^2$:
+
+   $$s = b\,A\,(\sigma - \Delta\sigma)$$
+
+   with $A$, $B$ and $\Delta\sigma$ defined in [Section 7](#7-vincentys-formula-for-geodesic-distance). The simpler one-term form $s \approx b(\sigma - \tfrac{f}{4} \sin\sigma \cos(2\sigma_m + \sigma))$ is **not** used here — it loses several kilometres of accuracy on continental baselines.
 
 ### 4. Radius of Curvature
 
