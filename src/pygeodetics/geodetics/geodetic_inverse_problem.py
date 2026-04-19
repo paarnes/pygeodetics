@@ -156,4 +156,4 @@ if __name__ == "__main__":
     print("Validation using GEOGLIB:")
     print(f"Forward Azimuth: {data_geoglib['azi1']:.10f} degrees")
     print(f"Reverse Azimuth: {data_geoglib['azi2']:.10f} degrees")
-    print(f"Forward Azimuth: {data_geoglib['s12']:.10f} degrees")
+    print(f"Distance: {data_geoglib['s12']:.10f} meters")
