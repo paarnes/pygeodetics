@@ -88,7 +88,7 @@ def geodetic_inverse_problem(
         )
         iter_count += 1
 
-    if np.abs(dlon_new - dlon) > epsilon:
+    if iter_count >= max_iterations and np.abs(dlon_new - dlon) > epsilon:
         raise RuntimeError(
             f"geodetic_inverse_problem did not converge within {max_iterations} iterations"
         )
