@@ -97,7 +97,7 @@ lat1, lon1 = 52.2296756, 21.0122287
 lat2, lon2 = 41.8919300, 12.5113300
 
 az1, az2, distance = geod.inverse_problem(lat1, lon1, lat2, lon2, quadrant_correction=False)
-print(f"Geodetic Inverse Problem:\nForward Azimuth: {az1:.6f}°\nReverse Azimuth: {az2:.6f}°\nDistance: {distance:.3f} m")
+print(f"Geodetic Inverse Problem:\nForward Azimuth: {az1:.6f}°\nFinal Azimuth at P2: {az2:.6f}°\nDistance: {distance:.3f} m")
 
 ```
 
@@ -108,11 +108,12 @@ from pygeodetics.Ellipsoid import GRS80
 
 geod = Geodetic(GRS80())
 
+lat1, lon1 = 52.2296756, 21.0122287
 az1 = -147.4628043168
 d = 1316208.08334
 
 lat2, lon2, az2 = geod.direct_problem(lat1, lon1, az1, d, quadrant_correction=True)
-print(f"Geodetic Direct Problem:\nDestination Latitude: {lat2:.6f}°\nDestination Longitude: {lon2:.6f}°\nFinal Azimuth: {az2:.6f}°")
+print(f"Geodetic Direct Problem:\nDestination Latitude: {lat2:.6f}°\nDestination Longitude: {lon2:.6f}°\nFinal Azimuth at destination: {az2:.6f}°")
 
 ```
 
@@ -271,7 +272,7 @@ where:
 
 ### 2. ECEF to Geodetic Conversion
 
-The iterative method for converting ECEF coordinates $(X, Y, Z)$ to geodetic coordinates $(\phi, \lambda, h)$ involves:
+PyGeodetics implements three solvers for the inverse problem $(X, Y, Z) \to (\phi, \lambda, h)$ — an iterative Heiskanen–Moritz solver, Bowring's closed-form method, and Vermeille's closed-form method. The recommended (default) solver is Bowring's method, summarised below:
 
 1. Compute the longitude:
 
@@ -279,11 +280,11 @@ The iterative method for converting ECEF coordinates $(X, Y, Z)$ to geodetic coo
 
 2. Compute the intermediate values:
 
-   $$p=\sqrt{X^2 + Y^2}, \quad \theta = \arctan\left(\frac{Z a}{p b}\right)$$
+   $$p=\sqrt{X^2 + Y^2}, \quad \theta = \arctan2(Z\,a,\; p\,b)$$
 
 3. Compute the latitude:
 
-   $$\phi=\arctan\left(\frac{Z + e'^2 b \sin^3\theta}{p - e^2 a \cos^3\theta}\right)$$
+   $$\phi=\arctan2\!\left(Z + e'^2 b \sin^3\theta,\; p - e^2 a \cos^3\theta\right)$$
    ,where $e'^2=\frac{a^2 - b^2}{b^2}$ is the second eccentricity squared.
 
 4. Compute the height:
@@ -301,7 +302,7 @@ The geodetic inverse problem calculates the geodesic distance $s$ and azimuths $
 
 2. Iteratively solve for the longitude difference $\Delta\lambda$ and the spherical arc $\sigma$:
 
-   $$\sigma = \arctan\left(\frac{\sqrt{(\cos\beta_2 \sin\Delta\lambda)^2 + (\cos\beta_1 \sin\beta_2 - \sin\beta_1 \cos\beta_2 \cos\Delta\lambda)^2}}{\sin\beta_1 \sin\beta_2 + \cos\beta_1 \cos\beta_2 \cos\Delta\lambda}\right)$$
+   $$\sigma = \arctan2\!\left(\sqrt{(\cos\beta_2 \sin\Delta\lambda)^2 + (\cos\beta_1 \sin\beta_2 - \sin\beta_1 \cos\beta_2 \cos\Delta\lambda)^2},\; \sin\beta_1 \sin\beta_2 + \cos\beta_1 \cos\beta_2 \cos\Delta\lambda\right)$$
 
 3. Compute the azimuths:
 
@@ -349,13 +350,13 @@ where $(X_0, Y_0, Z_0)$ are the ECEF coordinates of the reference point.
 
 ### 6. Mean Radius of the Ellipsoid
 
-The mean radius of the ellipsoid is computed as:
+PyGeodetics returns the IUGG arithmetic mean radius:
 
 $$
-R = \frac{2a + b}{3}.
+R_1 = \frac{2a + b}{3}.
 $$
 
-This formula provides an average radius considering both the equatorial and polar radii.
+This is one of several conventional definitions (others include the authalic and volumetric mean radii); it is the simple arithmetic mean of the three semi-axes $(a, a, b)$.
 
 ### 7. Vincenty's Formula for Geodesic Distance
 
@@ -548,10 +549,9 @@ The following table summarizes the key parameters of the Mercator Variant C proj
 
 The forward projection transforms geographic coordinates $(\lambda, \phi)$ (longitude, latitude) to projected coordinates $(E, N)$ (easting, northing).  
 
-- Constants:  
-  - $k_0 = \frac{\cos \phi_1}{\sqrt{1 - e^2 \sin^2 \phi_1}}$  
-  - $B = e \approx 2.7182818…$ (base of natural logarithm)  
-- All logarithms are **natural**.
+- Constants:
+  - $k_0 = \frac{\cos \phi_1}{\sqrt{1 - e^2 \sin^2 \phi_1}}$
+  - All logarithms below are **natural** logarithms (base $\mathrm{e}$). To avoid clashing with the eccentricity $e$, the natural-log base is denoted $\mathrm{e}$ in this section.
 
 1. **Compute the projection constant $k_0$:**
 

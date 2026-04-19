@@ -3,16 +3,10 @@ author: Per Helge Aarnes
 email: per.helge.aarnes@gmail.com
 """
 
-import sys
-import os
 import numpy as np
 
-# Ensure modules from the parent directory can be imported
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
-
-# Import required functions
-from geodetics.Mrad import Mrad
-from geodetics.Nrad import Nrad
+from .Mrad import Mrad
+from .Nrad import Nrad
 
 def radius_of_curvature_azimuth(a: float, b: float, lat: float, az: float, radians: bool = False) -> float:
     """
@@ -34,8 +28,9 @@ def radius_of_curvature_azimuth(a: float, b: float, lat: float, az: float, radia
     if not radians:
         lat, az = np.radians(lat), np.radians(az)
 
-    M = Mrad(a, b, lat)  # Compute meridional radius of curvature
-    N = Nrad(a, b, lat)  # Compute normal radius of curvature
+    # lat is now in radians; pass radians=True to avoid a second conversion
+    M = Mrad(a, b, lat, radians=True)  # Compute meridional radius of curvature
+    N = Nrad(a, b, lat, radians=True)  # Compute normal radius of curvature
 
     return (M * N) / (M * np.sin(az)**2 + N * np.cos(az)**2)
 
@@ -43,7 +38,7 @@ def radius_of_curvature_azimuth(a: float, b: float, lat: float, az: float, radia
 
 
 if __name__ == '__main__':
-    from Ellipsoid import WGS84
+    from pygeodetics.Ellipsoid import WGS84
 
     # Example usage
     ellip = WGS84()

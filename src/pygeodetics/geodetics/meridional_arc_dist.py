@@ -49,9 +49,7 @@ def meridional_arc_dist(a: float, b: float, lat: float, radians: bool = False) -
 
 
 if __name__ == '__main__':
-    import sys, os
-    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
-    from Ellipsoid import WGS84
+    from pygeodetics.Ellipsoid import WGS84
     # Compute the arc length
     ellip = WGS84()
     a, b = ellip.a, ellip.b

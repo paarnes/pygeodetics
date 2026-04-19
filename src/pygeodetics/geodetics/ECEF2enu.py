@@ -6,12 +6,9 @@ email: per.helge.aarnes@gmail.com
 
 import numpy as np
 from typing import Union, Tuple
-from geodetics.Nrad import Nrad
-from geodetics.geod2ECEF import geod2ECEF
-import sys
-import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
-from Ellipsoid import Ellipsoid, WGS84
+from .Nrad import Nrad
+from .geod2ECEF import geod2ECEF
+from ..Ellipsoid import Ellipsoid, WGS84
 
 
 def ECEF2enu_dvec(
@@ -47,10 +44,10 @@ def ECEF2enu_dvec(
     --------
     >>> lat = [45.0, 46.0]
     >>> lon = [9.0, 10.0]
-    >>> X = np.array([100.0, 200.0])
-    >>> Y = np.array([200.0, 300.0])
-    >>> Z = np.array([50.0, 75.0])
-    >>> e, n, u = ECEF2enu(lat, lon, X, Y, Z, radians=False)  # Convert degrees to radians
+    >>> dX = np.array([100.0, 200.0])
+    >>> dY = np.array([200.0, 300.0])
+    >>> dZ = np.array([50.0, 75.0])
+    >>> e, n, u = ECEF2enu_dvec(dX, dY, dZ, lat, lon, radians=False)
     >>> print(e, n, u)
     """
     # Ensure inputs are numpy arrays and at least 1D to handle scalars
@@ -161,122 +158,14 @@ def ECEF2enu(
 
 
 if __name__ == "__main__":
-
-    e_true = -17553188.505429048
-    n_true = -3126586.21287199
-    u_true = 13814727.418270092
-
-    # Define reference point geodetic coordinates (latitude and longitude in degrees)
-    lat_rad = np.array([1.0455756599070236]) # 59.90707247427837
-    lon_rad =np.array([0.18770113637361763]) # 10.754482924017791
-    X = np.array([12738186.63827794])
-    Y = np.array([-15447555.301322976])
-    Z = np.array([10385003.518329535])
-    h0 = np.array([0])
-    # Perform ECEF to ENU conversion
-    e, n, u = ECEF2enu(X, Y, Z, lat_rad, lon_rad, h0, radians=True)
-
-    # Print results
-    print(f"ECEF to ENU results:")
-    for i in range(len(lat_rad)):
-        print(f"Point {i+1}:")
-        print(f"  East displacement (e): {e[i]:.6f} meters")
-        print(f"  North displacement (n): {n[i]:.6f} meters")
-        print(f"  Up displacement (u): {u[i]:.6f} meters")
-
-
-
-    # Define reference point geodetic coordinates (latitude and longitude in degrees)
-    lat = np.degrees(1.0455756599070236)
-    lon = np.degrees(0.18770113637361763)
-    X = 12738186.63827794
-    Y = -15447555.301322976
-    Z = 10385003.518329535
-    h0 = 0
-
-    # Perform ECEF to ENU conversion
-    e, n, u = ECEF2enu(X, Y, Z, lat, lon, h0, radians=False)
-
-    # Print results
-    print(f"ECEF to ENU results:")
-    print(f"  East displacement (e): {e:.6f} meters")
-    print(f"  North displacement (n): {n:.6f} meters")
-    print(f"  Up displacement (u): {u:.6f} meters")
-
-
-    # ECEF2enu2
-    h = 0
-    e, n, u =ECEF2enu_dvec(X, Y, Z, lat, lon, radians=False)
-    # Print results
-    print(f"ECEF to ENU results (INTERNETT):")
-    print(f"  East displacement (e): {e} meters")
-    print(f"  North displacement (n): {n} meters")
-    print(f"  Up displacement (u): {u} meters")
-
-    # ECEF2enu PYMAP
-    from pymap3d import ecef2enu, ecef2enuv, Ellipsoid as ELL, geodetic2ecef
-    h = 0
-    e, n, u =ECEF2enu_dvec(X, Y, Z, lat, lon, radians=False)
-    print(f"ECEF to ENU results (PYMAP):")
-    print(f"  East displacement (e): {e} meters")
-    print(f"  North displacement (n): {n} meters")
-    print(f"  Up displacement (u): {u} meters")
-
-    ev, nv,uv = ecef2enuv(X, Y, Z, lat, lon, deg=True)
-    print(f"ECEF to ENU results (PYMAP ENUV):")
-    print(f"  East displacement (e): {ev} meters")
-    print(f"  North displacement (n): {nv} meters")
-    print(f"  Up displacement (u): {uv} meters")
-
-
-    # ECEF2enu make fasit
-    import sys
-    from pprint import pprint
-    import os
-    from geod2ECEF import geod2ECEF
-    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
-    from Ellipsoid import Ellipsoid, WGS84
-
-
-
-    lat0=59.907072474276958
-    lon0=10.754482924017791
+    # Simple demo
+    lat0 = 59.907072474276958
+    lon0 = 10.754482924017791
     h0 = 63.8281
     X, Y, Z = 3149785.9652, 598260.8822, 5495348.4927
 
-    lat0=60
-    lon0=5
-    h0 = 0
-    X,Y,Z =12738186.63827794, -15447555.301322976, 10385003.518329535
-
-
-    lat0=-49.907072474276958
-    lon0=-115.754482924017791
-    h0 = 10
-    X,Y,Z =-2949198.7309,-3422172.1149, -4487393.5421
-
-
-
-    a_wgs84 = WGS84().a
-    b_wgs84 = WGS84().b
-    ell = ELL(a_wgs84, b_wgs84)
-
-    eceff = geodetic2ecef(lat0, lon0, h0, ell=ell, deg=True)
-    min_ecef = geod2ECEF(np.radians(lat0), np.radians(lon0), h0)
-
-    # e, n, u = ecef2enu(X, Y, Z, lat0, lon0, h0, ell=ell, deg= True )
-    ee, nn, uu = ECEF2enu(X, Y, Z, lat0, lon0, h0, radians=False)
-    ei,ni,ui = ecef_to_enu_internett(X, Y, Z, lat0, lon0, h0)
-    e, n, u = ecef2enu(X, Y, Z, lat0, lon0, h0 )
-
-    print(f"\n\nECEF to ENU results (MIN):"
-        f"\nE: {ee}\nN: {nn}\nU: {uu}")
-
-    print(f"\n\nECEF to ENU results (INTERNETT):"
-        f"\nE: {ei}\nN: {ni}\nU: {ui}")
-
-    print(f"\n\nECEF to ENU results (PYMAP ENUV):"
-          f"\nE: {e}\nN: {n}\nU: {u}")
-
-
-
+    e, n, u = ECEF2enu(X, Y, Z, lat0, lon0, h0, radians=False)
+    print("ECEF to ENU results:")
+    print(f"  East : {e:.6f} m")
+    print(f"  North: {n:.6f} m")
+    print(f"  Up   : {u:.6f} m")

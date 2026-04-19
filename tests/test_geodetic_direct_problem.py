@@ -5,8 +5,8 @@ email: per.helge.aarnes@gmail.com
 
 import numpy as np
 import pytest
-from Ellipsoid import WGS84
-from geodetics.geodetic_direct_problem import geodetic_direct_problem
+from pygeodetics.Ellipsoid import WGS84
+from pygeodetics.geodetics.geodetic_direct_problem import geodetic_direct_problem
 
 # Define WGS84 ellipsoid parameters
 ellip = WGS84()

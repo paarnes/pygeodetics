@@ -6,8 +6,8 @@ email: per.helge.aarnes@gmail.com
 
 import numpy as np
 import pytest
-from Ellipsoid import WGS84
-from geodetics.geodetic_inverse_problem import geodetic_inverse_problem
+from pygeodetics.Ellipsoid import WGS84
+from pygeodetics.geodetics.geodetic_inverse_problem import geodetic_inverse_problem
 
 
 # Define WGS84 ellipsoid parameters
