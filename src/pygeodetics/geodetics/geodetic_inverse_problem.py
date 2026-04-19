@@ -15,7 +15,8 @@ def geodetic_inverse_problem(
     lat2: float,
     lon2: float,
     quadrant_correction: bool = False,
-    radians: bool = False) -> Tuple[float, float, float]:
+    radians: bool = False,
+    max_iterations: int = 200) -> Tuple[float, float, float]:
     """
     Solve the geodetic inverse problem:
     Compute azimuths and geodesic distance between two points.
@@ -36,6 +37,8 @@ def geodetic_inverse_problem(
         azimuths are in the range [0, 2π]. Default is False.
     radians : bool, optional. If False (default), assumes latitudes
         and longitudes are in degrees and converts them to radians.
+    max_iterations : int, optional. Maximum iterations for solving
+        longitude difference. Default is 200.
 
     Returns
     -------
@@ -61,7 +64,6 @@ def geodetic_inverse_problem(
     dlon_new = lon2 - lon1
     dlon = dlon_new + 1.0  # force at least one iteration
 
-    max_iterations = 200
     iter_count = 0
     while np.abs(dlon_new - dlon) > epsilon and iter_count < max_iterations:
         dlon = dlon_new
