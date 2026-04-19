@@ -38,3 +38,7 @@ def test_ecef2geod(func):
         f"{func.__name__}: Height mismatch\nExpected: {true_h}\nGot: {h}"
     )
 
+
+def test_ecef2geod_raises_on_non_convergence():
+    with pytest.raises(RuntimeError, match="failed to converge"):
+        ECEF2geod(a, b, X, Y, Z, angle_unit="deg", max_iterations=1)
