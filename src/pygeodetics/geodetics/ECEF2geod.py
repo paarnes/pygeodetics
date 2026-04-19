@@ -14,7 +14,8 @@ import numpy as np
 
 
 def ECEF2geod(a: float, b: float, X: float, Y: float,
-              Z: float, angle_unit: Literal["deg","rad"]= "deg") -> Tuple[float, float, float]:
+              Z: float, angle_unit: Literal["deg","rad"]= "deg",
+              max_iterations: int = 100) -> Tuple[float, float, float]:
     """
     Convert Cartesian ECEF (Earth-Centered, Earth-Fixed) coordinates to geodetic coordinates using iteration.
 
@@ -25,6 +26,7 @@ def ECEF2geod(a: float, b: float, X: float, Y: float,
     X : float. ECEF X coordinate (meters).
     Y : float. ECEF Y coordinate (meters).
     Z : float. ECEF Z coordinate (meters).
+    max_iterations : int. Maximum number of iterations for convergence.
 
     Returns
     -------
@@ -48,13 +50,15 @@ def ECEF2geod(a: float, b: float, X: float, Y: float,
     lat = np.arctan2(Z, p * (1 - e2))
 
     # Iterative process (Heiskanen-Moritz)
-    for _ in range(100):
+    for _ in range(max_iterations):
         N = a / np.sqrt(1 - e2 * np.sin(lat)**2)
         lat_new = np.arctan2(Z + N * e2 * np.sin(lat), p)
         if np.all(np.abs(lat_new - lat) < epsilon):
             lat = lat_new
             break
         lat = lat_new
+    else:
+        raise RuntimeError(f"ECEF2geod failed to converge within {max_iterations} iterations")
 
     lon = np.arctan2(Y, X)  # Longitude
     N = a / np.sqrt(1 - e2 * np.sin(lat)**2)
