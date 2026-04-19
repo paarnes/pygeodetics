@@ -73,5 +73,5 @@ def test_geodetic_inverse_problem_raises_on_non_convergence():
 
     with pytest.raises(RuntimeError, match="did not converge"):
         geodetic_inverse_problem(
-            ellip.a, ellip.b, 0.0, 0.0, 0.1, 0.1, radians=True, max_iterations=0
+            ellip.a, ellip.b, 0.0, 0.0, 0.1, 0.1, radians=True, max_iterations=1
         )
