@@ -2,13 +2,10 @@
 author: Per Helge Aarnes
 email: per.helge.aarnes@gmail.com
 """
-import sys
-import os
 import numpy as np
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
-from geodetics.Nrad import Nrad
-from geodetics.Mrad import Mrad
-from geodetics.footpoint_latitude import footpoint_latitude
+from ..geodetics.Nrad import Nrad
+from ..geodetics.Mrad import Mrad
+from ..geodetics.footpoint_latitude import footpoint_latitude
 
 
 def tm_point_scale_factor_geographic(a: float, b: float, lon: float, lat: float,
@@ -127,9 +124,7 @@ def tm_sphere_point_scale_factor(x: float, false_esting: float, R: float = 63710
 if __name__ == "__main__":
 
     from pyproj import Proj, Transformer
-    import sys, os
-    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
-    from Ellipsoid import WGS84, GRS80
+    from pygeodetics.Ellipsoid import WGS84, GRS80
     # lat = np.radians(59.907072474276958)  # Latitude in radians
     # lon = np.radians(10.754482924017791)  # Longitude in radians
     ellip = WGS84()

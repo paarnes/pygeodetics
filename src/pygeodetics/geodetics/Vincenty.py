@@ -3,12 +3,9 @@ author: Per Helge Aarnes
 email: per.helge.aarnes@gmail.com
 """
 
-import sys
-import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
-from Ellipsoid import Ellipsoid, WGS84
 from typing import Union
 import numpy as np
+from ..Ellipsoid import Ellipsoid, WGS84
 
 
 def vincenty_distance(
@@ -28,18 +25,16 @@ def vincenty_distance(
 
     Parameters
     ----------
-    lon1 : float or np.ndarray. Geodetic longitude(s) of the first point(s) in radians.
-    lat1 : float or np.ndarray. Geodetic latitude(s) of the first point(s) in radians.
-    lon2 : float or np.ndarray. Geodetic longitude(s) of the second point(s) in radians.
-    lat2 : float or np.ndarray. Geodetic latitude(s) of the second point(s) in radians.
+    lon1 : float or np.ndarray. Geodetic longitude(s) of the first point(s).
+    lat1 : float or np.ndarray. Geodetic latitude(s) of the first point(s).
+    lon2 : float or np.ndarray. Geodetic longitude(s) of the second point(s).
+    lat2 : float or np.ndarray. Geodetic latitude(s) of the second point(s).
     ellipsoid : Ellipsoid, optional. An Ellipsoid object that defines the semi-major and semi-minor axes. Defaults to WGS84.
     a : float, optional. Semi-major axis of the ellipsoid (meters). Overrides `ellipsoid` if provided.
     b : float, optional. Semi-minor axis of the ellipsoid (meters). Overrides `ellipsoid` if provided.
-    a : float. Semi-major axis of the ellipsoid (meters).
-    b : float. Semi-minor axis of the ellipsoid (meters).
     tol : float, optional. Convergence tolerance (default: 1e-12).
     max_iter : int, optional. Maximum number of iterations for convergence (default: 200).
-    radians : bool, optional. If False, assumes `lat1`, `lon1`, `lat2`, and `lon2` are in degrees and converts them to radians.
+    radians : bool, optional. If False (default), inputs are in degrees and converted to radians internally.
 
 
     Returns
@@ -50,9 +45,9 @@ def vincenty_distance(
     --------
     >>> a = 6378137.0  # Semi-major axis (meters, WGS84)
     >>> b = 6356752.314245  # Semi-minor axis (meters, WGS84)
-    >>> lat1, lon1 = np.radians(52.2296756), np.radians(21.0122287)
-    >>> lat2, lon2 = np.radians(41.8919300), np.radians(12.5113300)
-    >>> distance = vincenty_distance(lat1, lon1, lat2, lon2, a, b)
+    >>> lat1, lon1 = 52.2296756, 21.0122287
+    >>> lat2, lon2 = 41.8919300, 12.5113300
+    >>> distance = vincenty_distance(lon1, lat1, lon2, lat2, a=a, b=b, radians=False)
     >>> print(f"Distance: {distance:.3f} meters")
     """
 

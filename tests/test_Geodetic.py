@@ -5,11 +5,11 @@ email: per.helge.aarnes@gmail.com
 
 import numpy as np
 import pytest
-import Ellipsoid as Ellipsoid
-from Geodetic import Geodetic
+from pygeodetics.Ellipsoid import WGS84
+from pygeodetics.Geodetic import Geodetic
 
 # Define WGS84 ellipsoid parameters
-ellip = Ellipsoid.WGS84()
+ellip = WGS84()
 a = ellip.a
 b = ellip.b
 geod = Geodetic(ellip)
@@ -95,7 +95,7 @@ radius_test_cases = [
     {
         "lat": 45.0,
         "az": 30.0,
-        "expected": 6346070.049,
+        "expected": 6372732.411623,
         "description": "Radius at 45° latitude",
     },
 ]

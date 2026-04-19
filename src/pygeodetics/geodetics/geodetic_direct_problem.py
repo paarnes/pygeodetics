@@ -43,7 +43,8 @@ def geodetic_direct_problem(
         (degrees if `radians=False`, radians if `radians=True`).
     lon2 : float. Longitude of the destination point
         (degrees if `radians=False`, radians if `radians=True`).
-    az2 : float. Reverse azimuth at the destination point
+    az2 : float. Forward azimuth at the destination point (continuing the
+        geodesic; add 180° for back-azimuth toward the origin)
         (degrees if `radians=False`, radians if `radians=True`).
     """
 
@@ -109,9 +110,7 @@ def geodetic_direct_problem(
 
 
 if __name__ == "__main__":
-    import sys, os
-    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
-    from Ellipsoid import WGS84
+    from pygeodetics.Ellipsoid import WGS84
 
     ellip = WGS84()
     a = ellip.a

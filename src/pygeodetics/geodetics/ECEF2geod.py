@@ -42,19 +42,20 @@ def ECEF2geod(a: float, b: float, X: float, Y: float,
     """
     e2 = (a**2 - b**2) / a**2  # Square of the first eccentricity
     p = np.sqrt(X**2 + Y**2)
-    epsilon = 1e-10  # Convergence threshold
+    epsilon = 1e-12  # Convergence threshold
 
-    # Initial latitude estimate
-    lat = np.arctan2(Z, p)
-    lat_new = 0
+    # Initial latitude estimate (spherical approximation)
+    lat = np.arctan2(Z, p * (1 - e2))
 
-    # Iterative process
-    while np.abs(lat_new - lat) > epsilon:
-        lat = lat_new or lat
-        N = a / np.sqrt(1 - e2 * np.sin(lat)**2)  # Prime vertical radius of curvature
+    # Iterative process (Heiskanen-Moritz)
+    for _ in range(100):
+        N = a / np.sqrt(1 - e2 * np.sin(lat)**2)
         lat_new = np.arctan2(Z + N * e2 * np.sin(lat), p)
+        if np.all(np.abs(lat_new - lat) < epsilon):
+            lat = lat_new
+            break
+        lat = lat_new
 
-    lat = lat_new
     lon = np.arctan2(Y, X)  # Longitude
     N = a / np.sqrt(1 - e2 * np.sin(lat)**2)
     h = p / np.cos(lat) - N  # Height above ellipsoid
@@ -173,10 +174,7 @@ def ECEF2geodv(a: float, b: float, X: float, Y: float,
 
 
 if __name__ == "__main__":
-    import sys
-    import os
-    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
-    from Ellipsoid import WGS84
+    from pygeodetics.Ellipsoid import WGS84
     from pyproj import Transformer
 
     # Get the WGS84 ellipsoid parameters

@@ -9,7 +9,7 @@ import os
 import numpy as np
 import pytest
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
-from geodetics.ECEF2enu import ECEF2enu
+from pygeodetics.geodetics.ECEF2enu import ECEF2enu
 
 # Define test cases with expected results
 test_cases = [

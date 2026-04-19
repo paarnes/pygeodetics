@@ -5,8 +5,8 @@ email: per.helge.aarnes@gmail.com
 
 import numpy as np
 import pytest
-from Ellipsoid import WGS84
-from geodetics.Mrad import Mrad
+from pygeodetics.Ellipsoid import WGS84
+from pygeodetics.geodetics.Mrad import Mrad
 
 
 # Test cases for different locations

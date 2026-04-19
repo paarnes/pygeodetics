@@ -4,13 +4,10 @@ email: per.helge.aarnes@gmail.com
 
 """
 
-import sys
-import os
 from typing import Literal
 import numpy as np
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
-from geodetics.footpoint_latitude import footpoint_latitude
-from geodetics.Nrad import Nrad
+from ..geodetics.footpoint_latitude import footpoint_latitude
+from ..geodetics.Nrad import Nrad
 
 
 
@@ -146,9 +143,7 @@ def tm_sphere_grid_conv_projected(x: float, y: float, false_easting: float, R: f
 
 if __name__ == "__main__":
     from pyproj import Proj, Transformer
-    import sys, os
-    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
-    from Ellipsoid import WGS84
+    from pygeodetics.Ellipsoid import WGS84
 
     ellip = WGS84()
     a = ellip.a
