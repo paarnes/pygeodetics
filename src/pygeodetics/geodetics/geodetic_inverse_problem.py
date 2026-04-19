@@ -148,6 +148,6 @@ if __name__ == "__main__":
     print(f"Distance: {s_pyproj:.10f} meters\n")
 
     print("Validation using GEOGLIB:")
-    print(f"Forward Azimuth: {data_geoglib["azi1"]:.10f} degrees")
-    print(f"Reverse Azimuth: {data_geoglib["azi2"]:.10f} degrees")
-    print(f"Forward Azimuth: {data_geoglib["s12"]:.10f} degrees")
+    print(f"Forward Azimuth: {data_geoglib['azi1']:.10f} degrees")
+    print(f"Reverse Azimuth: {data_geoglib['azi2']:.10f} degrees")
+    print(f"Forward Azimuth: {data_geoglib['s12']:.10f} degrees")
