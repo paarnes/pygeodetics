@@ -27,12 +27,18 @@ def ECEF2geod(a: float, b: float, X: float, Y: float,
     Y : float. ECEF Y coordinate (meters).
     Z : float. ECEF Z coordinate (meters).
     max_iterations : int. Maximum number of iterations for convergence.
+        Default is 100; raises RuntimeError if convergence is not achieved.
 
     Returns
     -------
     lat : float. Latitude in radians.
     lon : float. Longitude in radians.
     h : float. Height above the ellipsoid (meters).
+
+    Raises
+    ------
+    RuntimeError
+        If the iterative method does not converge within `max_iterations`.
 
     Examples
     --------
