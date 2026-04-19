@@ -71,6 +71,7 @@ def test_geodetic_inverse_problem(case):
 
 def test_geodetic_inverse_problem_raises_on_non_convergence(monkeypatch):
     monkeypatch.setattr(geodetic_inverse_problem_module.np, "abs", lambda _: 1.0)
+    ellip = WGS84()
 
     with pytest.raises(RuntimeError, match="did not converge"):
-        geodetic_inverse_problem(a, b, 0.0, 0.0, 0.1, 0.1, radians=True)
+        geodetic_inverse_problem(ellip.a, ellip.b, 0.0, 0.0, 0.1, 0.1, radians=True)
