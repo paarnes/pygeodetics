@@ -2,6 +2,15 @@
     <img src="https://github.com/paarnes/pygeodetics/blob/main/docs/icon/pygeodetics.png?raw=true" alt="PyGeodetics Logo" width="700">
 </p>
 
+<p align="center">
+    <a href="https://github.com/paarnes/pygeodetics/actions/workflows/tests.yml"><img alt="Tests" src="https://github.com/paarnes/pygeodetics/actions/workflows/tests.yml/badge.svg"></a>
+    <a href="https://pypi.org/project/pygeodetics/"><img alt="PyPI" src="https://img.shields.io/pypi/v/pygeodetics?color=blue"></a>
+    <a href="https://pypi.org/project/pygeodetics/"><img alt="Python versions" src="https://img.shields.io/pypi/pyversions/pygeodetics"></a>
+    <a href="https://github.com/paarnes/pygeodetics/blob/main/LICENSE"><img alt="License: MIT" src="https://img.shields.io/github/license/paarnes/pygeodetics"></a>
+    <a href="https://github.com/paarnes/pygeodetics/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/paarnes/pygeodetics"></a>
+    <a href="https://github.com/paarnes/pygeodetics/issues"><img alt="GitHub issues" src="https://img.shields.io/github/issues/paarnes/pygeodetics"></a>
+    <a href="https://pypi.org/project/pygeodetics/"><img alt="Downloads" src="https://img.shields.io/pypi/dm/pygeodetics"></a>
+</p>
 
 ## Introduction
 PyGeodetics is a Python library for performing geodetic computations like geodetic inverse and direct problems, conversions between different reference systems like ECEF to ENU, ECEF to geographic etc.
