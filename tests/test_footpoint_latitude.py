@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
-from Ellipsoid import WGS84
-from geodetics.footpoint_latitude import footpoint_latitude
+from pygeodetics.Ellipsoid import WGS84
+from pygeodetics.geodetics.footpoint_latitude import footpoint_latitude
 
 
 # Test cases for different locations

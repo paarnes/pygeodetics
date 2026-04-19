@@ -40,9 +40,7 @@ def Mrad(a: float, b: float, lat: float, radians: bool = False) -> float:
 
 
 if __name__ == '__main__':
-    import sys, os
-    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
-    from Ellipsoid import WGS84
+    from pygeodetics.Ellipsoid import WGS84
     ellip = WGS84()
     a, b = ellip.a, ellip.b
     lat = 60

@@ -15,7 +15,8 @@ def geodetic_inverse_problem(
     lat2: float,
     lon2: float,
     quadrant_correction: bool = False,
-    radians: bool = False) -> Tuple[float, float, float]:
+    radians: bool = False,
+    max_iterations: int = 200) -> Tuple[float, float, float]:
     """
     Solve the geodetic inverse problem:
     Compute azimuths and geodesic distance between two points.
@@ -36,13 +37,15 @@ def geodetic_inverse_problem(
         azimuths are in the range [0, 2π]. Default is False.
     radians : bool, optional. If False (default), assumes latitudes
         and longitudes are in degrees and converts them to radians.
+    max_iterations : int, optional. Maximum iterations for solving
+        longitude difference. Default is 200.
 
     Returns
     -------
     az1 : float. Forward azimuth at point 1
         (degrees if `radians=False`, radians if `radians=True`).
-    az2 : float. Reverse azimuth at point 2
-        (degrees if `radians=False`, radians if `radians=True`).
+    az2 : float. Forward azimuth at point 2 (continuing the geodesic;
+        add 180° to obtain the back-azimuth from P2 toward P1).
     d : float. Geodesic distance between the two points (meters).
     """
 
@@ -57,18 +60,19 @@ def geodetic_inverse_problem(
     beta1 = np.arctan(b / a * np.tan(lat1))
     beta2 = np.arctan(b / a * np.tan(lat2))
 
-    epsilon = 1e-10
+    epsilon = 1e-12
     dlon_new = lon2 - lon1
-    dlon = 0
+    dlon = dlon_new + 1.0  # force at least one iteration
 
-    while np.abs(dlon_new - dlon) > epsilon:
+    iter_count = 0
+    while np.abs(dlon_new - dlon) > epsilon and iter_count < max_iterations:
         dlon = dlon_new
 
         X = np.cos(beta1) * np.sin(beta2) - np.sin(beta1) * np.cos(beta2) * np.cos(dlon)
         Y = np.cos(beta2) * np.sin(dlon)
         Z = np.sin(beta1) * np.sin(beta2) + np.cos(beta1) * np.cos(beta2) * np.cos(dlon)
 
-        sigma = np.arctan(np.sqrt(X**2 + Y**2) / Z)
+        sigma = np.arctan2(np.sqrt(X**2 + Y**2), Z)
         az1 = np.arctan2(Y, X)
         az0 = np.arcsin(np.sin(az1) * np.cos(beta1))
 
@@ -81,6 +85,12 @@ def geodetic_inverse_problem(
             (1 - K - K**2) * sigma +
             K * np.sin(sigma) * np.cos(sigma1 + sigma2) +
             K**2 * np.sin(sigma) * np.cos(sigma) * np.cos(2 * (sigma1 + sigma2))
+        )
+        iter_count += 1
+
+    if iter_count >= max_iterations and np.abs(dlon_new - dlon) > epsilon:
+        raise RuntimeError(
+            f"geodetic_inverse_problem did not converge within {max_iterations} iterations"
         )
 
     dlon = dlon_new
@@ -112,9 +122,7 @@ def geodetic_inverse_problem(
 
 
 if __name__ == "__main__":
-    import sys, os
-    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
-    from Ellipsoid import WGS84
+    from pygeodetics.Ellipsoid import WGS84
 
     ellip = WGS84()
     a = ellip.a
@@ -148,6 +156,6 @@ if __name__ == "__main__":
     print(f"Distance: {s_pyproj:.10f} meters\n")
 
     print("Validation using GEOGLIB:")
-    print(f"Forward Azimuth: {data_geoglib["azi1"]:.10f} degrees")
-    print(f"Reverse Azimuth: {data_geoglib["azi2"]:.10f} degrees")
-    print(f"Forward Azimuth: {data_geoglib["s12"]:.10f} degrees")
+    print(f"Forward Azimuth: {data_geoglib['azi1']:.10f} degrees")
+    print(f"Reverse Azimuth: {data_geoglib['azi2']:.10f} degrees")
+    print(f"Distance: {data_geoglib['s12']:.10f} meters")

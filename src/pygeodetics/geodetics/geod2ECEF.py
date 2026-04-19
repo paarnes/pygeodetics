@@ -2,20 +2,14 @@
 author: Per Helge Aarnes
 email: per.helge.aarnes@gmail.com
 
-Assumes earth is a perfect sphere.
-
-Based on the "THE MERCATOR PROJECTIONS" book from  Peter Osborne, 2013
-See "The scale factor for the TMS projection" section at page 63.
-
+Convert geodetic coordinates (latitude, longitude, height) to Cartesian
+ECEF (Earth-Centered, Earth-Fixed) coordinates on a reference ellipsoid.
 """
 
 
 from typing import Tuple
 import numpy as np
-import sys
-import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
-from Ellipsoid import Ellipsoid, WGS84
+from ..Ellipsoid import Ellipsoid, WGS84
 
 
 

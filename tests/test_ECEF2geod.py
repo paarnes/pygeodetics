@@ -5,8 +5,8 @@ email: per.helge.aarnes@gmail.com
 
 import numpy as np
 import pytest
-from Ellipsoid import WGS84
-from geodetics.ECEF2geod import ECEF2geod, ECEF2geodb, ECEF2geodv
+from pygeodetics.Ellipsoid import WGS84
+from pygeodetics.geodetics.ECEF2geod import ECEF2geod, ECEF2geodb, ECEF2geodv
 
 # Define WGS84 ellipsoid parameters
 ellip = WGS84()
@@ -38,3 +38,7 @@ def test_ecef2geod(func):
         f"{func.__name__}: Height mismatch\nExpected: {true_h}\nGot: {h}"
     )
 
+
+def test_ecef2geod_raises_on_non_convergence():
+    with pytest.raises(RuntimeError, match="failed to converge"):
+        ECEF2geod(a, b, X, Y, Z, angle_unit="deg", max_iterations=1)

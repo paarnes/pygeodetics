@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
-from Ellipsoid import WGS84, GRS80
-from projections.GridConvergence import tm_grid_convergence_projected, tm_grid_convergence_geographic
+from pygeodetics.Ellipsoid import WGS84, GRS80
+from pygeodetics.projections.GridConvergence import tm_grid_convergence_projected, tm_grid_convergence_geographic
 
 
 

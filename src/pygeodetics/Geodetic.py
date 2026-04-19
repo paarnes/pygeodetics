@@ -5,16 +5,16 @@ email: per.helge.aarnes@gmail.com
 
 from typing import Literal, Optional, Tuple, Union
 import numpy as np
-from Ellipsoid import Ellipsoid, WGS84
-from geodetics.ECEF2enu import ECEF2enu
-from geodetics.ECEF2geod import ECEF2geodb
-from geodetics.geod2ECEF import geod2ECEF
-from geodetics.Mrad import Mrad
-from geodetics.Nrad import Nrad
-from geodetics.geodetic_inverse_problem import geodetic_inverse_problem
-from geodetics.geodetic_direct_problem import geodetic_direct_problem
-from geodetics.radius_of_curvature_azimuth import radius_of_curvature_azimuth
-from geodetics.Vincenty import vincenty_distance
+from .Ellipsoid import Ellipsoid, WGS84
+from .geodetics.ECEF2enu import ECEF2enu
+from .geodetics.ECEF2geod import ECEF2geodb
+from .geodetics.geod2ECEF import geod2ECEF
+from .geodetics.Mrad import Mrad
+from .geodetics.Nrad import Nrad
+from .geodetics.geodetic_inverse_problem import geodetic_inverse_problem
+from .geodetics.geodetic_direct_problem import geodetic_direct_problem
+from .geodetics.radius_of_curvature_azimuth import radius_of_curvature_azimuth
+from .geodetics.Vincenty import vincenty_distance
 
 
 class Geodetic(Ellipsoid):
@@ -139,11 +139,13 @@ class Geodetic(Ellipsoid):
 
         Parameters
         ----------
-        lat : float. Geodetic latitude of the reference point in radians.
-        lon : float. Geodetic longitude of the reference point in radians.
         X : float. X coordinate (ECEF in meters).
         Y : float. Y coordinate (ECEF in meters).
         Z : float. Z coordinate (ECEF in meters).
+        lat0 : float. Geodetic latitude of the reference point.
+        lon0 : float. Geodetic longitude of the reference point.
+        h0 : float. Altitude of the reference point in meters.
+        radians : bool, optional. If `False` (default), assumes `lat0` and `lon0` are in degrees and converts them to radians.
 
         Returns
         -------
@@ -154,8 +156,8 @@ class Geodetic(Ellipsoid):
         Examples
         --------
         >>> geod = Geodetic(WGS84())
-        >>> n, e, d = geod.ecef2ned(np.radians(45.0), np.radians(9.0), 1111321.0, 1234567.0, 5678901.0)
-        >>> print(f"N: {n:.6f}, E: {e:.6f}, D: {d:.6f}")
+        >>> n, e, d = geod.ecef2ned(3149785.9652, 598260.8822, 5495348.4927,
+        ...                         59.907072, 10.754482, 63.8281)
         """
         e, n, u = ECEF2enu(
             X, Y, Z, lat0, lon0, h0, ellipsoid=self.ellipsoid, radians=radians
@@ -192,8 +194,8 @@ class Geodetic(Ellipsoid):
         -------
         az1 : float. Forward azimuth at point 1
             (degrees if `radians=False`, radians if `radians=True`).
-        az2 : float. Reverse azimuth at point 2
-            (degrees if `radians=False`, radians if `radians=True`).
+        az2 : float. Forward azimuth at point 2 (continuing the geodesic;
+            add 180° to obtain the back-azimuth from P2 toward P1).
         d : float. Geodesic distance between the two points (meters).
         """
         return geodetic_inverse_problem(
@@ -227,7 +229,8 @@ class Geodetic(Ellipsoid):
         -------
         lat2 : Latitude of the destination point (degrees if `radians=False`, radians if `radians=True`).
         lon2 : Longitude of the destination point (degrees if `radians=False`, radians if `radians=True`).
-        az2 : Reverse azimuth at the destination point (degrees if `radians=False`, radians if `radians=True`).
+        az2 : Forward azimuth at the destination point (continuing the
+            geodesic; add 180° for back-azimuth toward the origin).
 
         """
         return geodetic_direct_problem(
@@ -261,13 +264,11 @@ class Geodetic(Ellipsoid):
 
         Notes
         -----
-        This function computes geodetic latitude, longitude, and
-        height above the ellipsoid from ECEF coordinates using an Bowrings method.
+        Computes geodetic latitude, longitude, and height above the
+        ellipsoid from ECEF coordinates using Bowring's closed-form method.
 
         Parameters
         ----------
-        a : Semi-major axis of the reference ellipsoid (meters).
-        b : Semi-minor axis of the reference ellipsoid (meters).
         X : ECEF X coordinate (meters).
         Y : ECEF Y coordinate (meters).
         Z : ECEF Z coordinate (meters).
@@ -326,12 +327,13 @@ class Geodetic(Ellipsoid):
 
         Parameters
         ----------
-        lon1 : Geodetic longitude(s) of the first point(s) in radians.
-        lat1 : Geodetic latitude(s) of the first point(s) in radians.
-        lon2 : Geodetic longitude(s) of the second point(s) in radians.
-        lat2 : Geodetic latitude(s) of the second point(s) in radians.
+        lon1 : Geodetic longitude(s) of the first point(s).
+        lat1 : Geodetic latitude(s) of the first point(s).
+        lon2 : Geodetic longitude(s) of the second point(s).
+        lat2 : Geodetic latitude(s) of the second point(s).
         tol : Convergence tolerance (default: 1e-12).
         max_iter : Maximum number of iterations for convergence (default: 200).
+        radians : If False (default), inputs are in degrees and converted to radians internally.
 
         Returns
         -------

@@ -7,13 +7,13 @@ email: per.helge.aarnes@gmail.com
 import numpy as np
 import pytest
 from pygeodesy.ellipsoidalVincenty import LatLon
-from geodetics.Vincenty import vincenty_distance  # Replace `your_module` with the actual module name
-import Ellipsoid as Ellipsoid
+from pygeodetics.geodetics.Vincenty import vincenty_distance
+from pygeodetics.Ellipsoid import WGS84
 
 
 
 # Define WGS84 ellipsoid parameters
-ellip = Ellipsoid.WGS84()
+ellip = WGS84()
 a = ellip.a
 b = ellip.b
 

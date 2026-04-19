@@ -6,8 +6,8 @@ email: per.helge.aarnes@gmail.com
 
 import numpy as np
 import pytest
-from Ellipsoid import WGS84
-from geodetics.geodetic_inverse_problem import geodetic_inverse_problem
+from pygeodetics.Ellipsoid import WGS84
+from pygeodetics.geodetics.geodetic_inverse_problem import geodetic_inverse_problem
 
 
 # Define WGS84 ellipsoid parameters
@@ -66,3 +66,12 @@ def test_geodetic_inverse_problem(case):
         f"Computed Distance: {s:.10f} meters\n"
         f"Expected Distance: {s_true:.10f} meters"
     )
+
+
+def test_geodetic_inverse_problem_raises_on_non_convergence():
+    ellip = WGS84()
+
+    with pytest.raises(RuntimeError, match="did not converge"):
+        geodetic_inverse_problem(
+            ellip.a, ellip.b, 0.0, 0.0, 0.1, 0.1, radians=True, max_iterations=1
+        )
