@@ -7,9 +7,7 @@
     <a href="https://pypi.org/project/pygeodetics/"><img alt="PyPI" src="https://img.shields.io/pypi/v/pygeodetics?color=blue"></a>
     <a href="https://pypi.org/project/pygeodetics/"><img alt="Python versions" src="https://img.shields.io/pypi/pyversions/pygeodetics"></a>
     <a href="https://github.com/paarnes/pygeodetics/blob/main/LICENSE"><img alt="License: MIT" src="https://img.shields.io/github/license/paarnes/pygeodetics"></a>
-    <a href="https://github.com/paarnes/pygeodetics/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/paarnes/pygeodetics"></a>
     <a href="https://github.com/paarnes/pygeodetics/issues"><img alt="GitHub issues" src="https://img.shields.io/github/issues/paarnes/pygeodetics"></a>
-    <a href="https://pypi.org/project/pygeodetics/"><img alt="Downloads" src="https://img.shields.io/pypi/dm/pygeodetics"></a>
 </p>
 
 ## Introduction
