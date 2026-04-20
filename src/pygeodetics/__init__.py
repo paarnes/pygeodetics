@@ -5,8 +5,14 @@ Author: Per Helge Aarnes
 Email: per.helge.aarnes@gmail.com
 """
 
-# Define package version
-__version__ = "0.1.0"
+from importlib.metadata import PackageNotFoundError, version as _pkg_version
+
+# Derive package version from installed distribution metadata so it stays
+# in sync with pyproject.toml without manual edits on each release.
+try:
+    __version__ = _pkg_version("pygeodetics")
+except PackageNotFoundError:  # package is not installed (e.g. running from source tree)
+    __version__ = "0.0.0+unknown"
 
 # Import necessary modules
 from .Ellipsoid import (

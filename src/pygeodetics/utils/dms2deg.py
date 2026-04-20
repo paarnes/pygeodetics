@@ -5,7 +5,7 @@ email: per.helge.aarnes@gmail.com
 
 from decimal import Decimal, getcontext
 import numpy as np
-from round_to_significant_digits import round_to_significant_digits
+from .round_to_significant_digits import round_to_significant_digits
 
 # Set precision for Decimal calculations
 getcontext().prec = 25
