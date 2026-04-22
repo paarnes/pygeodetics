@@ -5,6 +5,13 @@
 
 set -euxo pipefail
 
+# Git LFS is needed for repositories that install the standard pre-push hook.
+if ! command -v git-lfs >/dev/null 2>&1; then
+    sudo apt-get update
+    sudo apt-get install -y git-lfs
+fi
+git lfs install
+
 python -m pip install --upgrade pip setuptools wheel
 
 # Install the project in editable mode.
