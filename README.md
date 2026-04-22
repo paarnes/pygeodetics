@@ -21,6 +21,13 @@ PyGeodetics is a Python library for performing geodetic computations like geodet
 - Distance between two points along the ellipsoid
 - Compute radius of curvature and mean radius of the reference ellipsoid
 - Support for different reference ellipsoids
+- High-level UTM API with automatic zone and hemisphere handling (`geodetic_to_utm` / `utm_to_geodetic`)
+- Universal Polar Stereographic (UPS) for the polar regions (`geodetic_to_ups` / `ups_to_geodetic`)
+- MGRS encoding and parsing across UTM and UPS, all standard precision levels (`to_mgrs` / `from_mgrs`)
+- EPSG-code helpers for the WGS84 UTM and UPS zones (`utm_epsg`, `ups_epsg`)
+- Bidirectional local-frame conversions: ENU ↔ geodetic, NED ↔ geodetic, ENU ↔ ECEF, NED ↔ ECEF
+- Azimuth/Elevation/Range (AER) conversions to and from ENU, NED, ECEF and geodetic
+- Geodesic polygon utilities: perimeter, area (rhumb-line approximation), centroid, bounding box, geodesic interpolation
 
 ## Installation
 ```sh
@@ -41,6 +48,13 @@ pip install pygeodetics
 - [Calculate the normal radius of curvature (N) at a given latitude.](#calculate-the-normal-radius-of-curvature-n-at-a-given-latitude)
 - [Use of Mercator Variant C projection](#use-of-mercator-variant-c-projection)
 - [Use of Transverse Mercator projection](#use-of-transverse-mercator-projection)
+- [UTM convenience API (geodetic_to_utm / utm_to_geodetic)](#utm-convenience-api-geodetic_to_utm--utm_to_geodetic)
+- [UPS (Universal Polar Stereographic) for the poles](#ups-universal-polar-stereographic-for-the-poles)
+- [MGRS encoding and parsing](#mgrs-encoding-and-parsing)
+- [EPSG helpers](#epsg-helpers)
+- [Bidirectional ENU / NED conversions](#bidirectional-enu--ned-conversions)
+- [Azimuth / Elevation / Range (AER) conversions](#azimuth--elevation--range-aer-conversions)
+- [Geodesic polygon utilities](#geodesic-polygon-utilities)
 
 ## Usage Examples
 
@@ -252,6 +266,189 @@ results = np.vstack((lon_back, lat_back, height)).T
 print(f"\nGeographic Coordinates TM:\n{results}")
 
 ```
+
+
+### UTM convenience API (`geodetic_to_utm` / `utm_to_geodetic`)
+
+A turnkey wrapper around `TransverseMercator` that applies the standard UTM
+defaults (scale factor 0.9996, false easting 500 000 m, false northing
+0 m / 10 000 000 m for N / S hemisphere) and selects the UTM zone
+automatically from the longitude. Supports scalar and NumPy array inputs.
+
+```python
+from pygeodetics import geodetic_to_utm, utm_to_geodetic
+
+# Forward: geodetic -> UTM (auto zone, auto hemisphere)
+easting, northing, zone, band = geodetic_to_utm(lat=60.0, lon=10.75)
+print(f"E={easting:.3f}  N={northing:.3f}  zone={zone}{band}")
+
+# Inverse: UTM -> geodetic (zone + hemisphere required)
+lat, lon = utm_to_geodetic(easting, northing, zone=zone, hemisphere="N")
+print(f"lat={lat:.10f}°  lon={lon:.10f}°")
+
+# Southern hemisphere works the same way (false northing 10 000 000 m
+# is applied automatically on the forward call).
+e_s, n_s, zone_s, band_s = geodetic_to_utm(-33.8688, 151.2093)
+
+# Override the auto-selected zone (useful near zone borders or for the
+# Norway / Svalbard exceptions, which are not auto-applied).
+e, n, _, _ = geodetic_to_utm(60.0, 10.75, force_zone=33)
+
+# Custom ellipsoid
+from pygeodetics.Ellipsoid import GRS80
+geodetic_to_utm(60.0, 10.75, ellipsoid=GRS80())
+```
+
+
+### UPS (Universal Polar Stereographic) for the poles
+
+UPS covers the polar regions where UTM is undefined (latitudes north of
+84°N and south of 80°S). It uses the standard UPS defaults: scale
+factor 0.994, false easting / northing 2 000 000 m, central meridian 0°.
+The hemisphere is selected automatically from the sign of the latitude.
+
+```python
+from pygeodetics import geodetic_to_ups, ups_to_geodetic
+
+# Forward (auto hemisphere)
+e, n, hemi = geodetic_to_ups(85.0, 0.0)
+print(f"E={e:.3f}  N={n:.3f}  hemi={hemi}")
+
+# Inverse (hemisphere required)
+lat, lon = ups_to_geodetic(e, n, hemisphere="N")
+
+# Both poles project to the false origin (2 000 000, 2 000 000)
+geodetic_to_ups(90.0, 0.0)    # -> (2_000_000, 2_000_000, 'N')
+geodetic_to_ups(-90.0, 0.0)   # -> (2_000_000, 2_000_000, 'S')
+```
+
+
+### MGRS encoding and parsing
+
+Encode any geodetic position as an MGRS string. The function
+automatically chooses UTM (latitudes -80°..84°) or UPS (polar regions)
+and supports all standard precision levels (0..5 → 100 km..1 m).
+
+```python
+from pygeodetics import to_mgrs, from_mgrs
+
+# Forward at 1 m precision
+to_mgrs(60.0, 10.75)                 # '32VNM9760352702'
+to_mgrs(-33.8688, 151.2093)          # '56HLH3436850948'  (southern hemisphere)
+to_mgrs(85.0, 0.0)                   # 'ZAB0000044542'    (UPS north)
+to_mgrs(-85.0, 45.0)                 # 'BFR9276792767'    (UPS south)
+
+# Lower precision
+to_mgrs(60.0, 10.75, precision=3)    # '32VNM976527'      (100 m)
+to_mgrs(60.0, 10.75, precision=0)    # '32VNM'            (100 km square only)
+
+# Parsing (returns the SW corner of the cell)
+lat, lon = from_mgrs('32VNM9760352702')
+lat, lon = from_mgrs('32V NM 97603 52702')   # spaces & lowercase accepted
+```
+
+
+### EPSG helpers
+
+```python
+from pygeodetics import utm_epsg, ups_epsg
+
+utm_epsg(32, 'N')                # 32632  (WGS84 UTM zone 32N)
+utm_epsg(56, 'S')                # 32756  (WGS84 UTM zone 56S)
+utm_epsg(15, 'N', datum='NAD83') # 26915
+ups_epsg('N')                    # 32661  (WGS84 UPS North)
+ups_epsg('S')                    # 32761  (WGS84 UPS South)
+```
+
+### Bidirectional ENU / NED conversions
+
+Round-trip conversions between geodetic, ECEF, and the local tangent
+frames ENU (East-North-Up) and NED (North-East-Down). Cross-validated
+against `pymap3d` to ~1e-12 precision.
+
+```python
+from pygeodetics import (
+    geodetic2enu, enu2geodetic,
+    geodetic2ned, ned2geodetic,
+    enu2ecef, ned2ecef,
+)
+
+# Local observer at Oslo
+lat0, lon0, h0 = 59.91, 10.75, 100.0
+
+# Forward: geodetic -> ENU
+e, n, u = geodetic2enu(60.0, 10.9, 250.0, lat0, lon0, h0)
+print(f"ENU = ({e:.3f}, {n:.3f}, {u:.3f})")
+
+# Inverse: ENU -> geodetic (sub-millimetre round trip)
+lat, lon, h = enu2geodetic(e, n, u, lat0, lon0, h0)
+
+# NED works the same way
+n_, e_, d_ = geodetic2ned(60.0, 10.9, 250.0, lat0, lon0, h0)
+lat, lon, h = ned2geodetic(n_, e_, d_, lat0, lon0, h0)
+
+# Arrays are supported transparently
+import numpy as np
+lats = np.array([60.0, 60.1, 60.2])
+lons = np.array([10.8, 10.9, 11.0])
+hs   = np.array([100.0, 200.0, 300.0])
+e, n, u = geodetic2enu(lats, lons, hs, lat0, lon0, h0)
+```
+
+### Azimuth / Elevation / Range (AER) conversions
+
+Convert between AER (azimuth clockwise from north in degrees,
+elevation above horizon in degrees, slant range in metres) and any of
+geodetic, ECEF, ENU or NED.
+
+```python
+from pygeodetics import (
+    geodetic2aer, aer2geodetic,
+    enu2aer, aer2enu,
+    ned2aer, aer2ned,
+    ecef2aer, aer2ecef,
+)
+
+# Look angle from observer to a satellite ground projection
+lat0, lon0, h0 = 59.91, 10.75, 100.0
+az, el, rng = geodetic2aer(60.0, 10.9, 250.0, lat0, lon0, h0)
+print(f"Azimuth = {az:.3f}°, Elevation = {el:.3f}°, Range = {rng:.1f} m")
+
+# Inverse: place a target at a given look-angle
+lat, lon, h = aer2geodetic(az, el, rng, lat0, lon0, h0)
+```
+
+### Geodesic polygon utilities
+
+Compute perimeter, ellipsoidal area, centroid, bounding box and
+geodesic interpolation for a polygon defined by latitude/longitude
+vertices. Polygons are auto-closed if not already.
+
+```python
+from pygeodetics import (
+    polygon_perimeter, polygon_area, polygon_centroid,
+    polygon_bounds, geodesic_interpolate,
+)
+
+# Polygon over southern Norway
+lats = [60.0, 60.0, 60.5, 60.5]
+lons = [10.0, 11.0, 11.0, 10.0]
+
+print("Perimeter:", polygon_perimeter(lats, lons), "m")   # Vincenty sum
+print("Area     :", polygon_area(lats, lons),      "m^2") # ellipsoidal
+print("Centroid :", polygon_centroid(lats, lons))         # (lat, lon)
+print("Bounds   :", polygon_bounds(lats, lons))           # (lat_min, lon_min, lat_max, lon_max)
+
+# Sample 50 evenly spaced points along a geodesic
+sample_lats, sample_lons = geodesic_interpolate(60.0, 10.0, 70.0, 25.0, n_points=50)
+```
+
+> **Note on area** — `polygon_area` integrates the authalic latitude
+> along rhumb-line edges (Green's theorem on the ellipsoid). It matches
+> `pyproj.Geod.polygon_area_perimeter` to better than 1 ppm for small
+> and medium polygons (degrees-scale). For continental-scale polygons
+> the rhumb-line approximation differs from the true geodesic-polygon
+> area; in that case use `pyproj` directly.
 
 
 ## Math and the Theory Basis
