@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pygeodetics"
-version = "1.1.0"
+version = "1.1.1"
 description = "A Python library for geodetic computations"
 authors = [{ name = "Per Helge Aarnes", email = "per.helge.aarnes@gmail.com" }]
 license = { file = "LICENSE" }
