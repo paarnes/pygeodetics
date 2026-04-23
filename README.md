@@ -41,7 +41,8 @@ equally well with scalar inputs and NumPy arrays.
   or WGS84 UPS polar CRS from a simple arithmetic formula (no external
   database or network call): `utm_epsg`, `ups_epsg`.
 - **Polygon utilities on the ellipsoid** — perimeter, area, centroid,
-  bounding box and geodesic interpolation between two points.
+  bounding box, geodesic densification (insert vertices so no edge
+  exceeds a given length) and geodesic interpolation between two points.
 - **Multiple reference ellipsoids** — WGS84 (default), GRS80,
   International 1924, Clarke 1866, Bessel 1841 and Bessel Modified; any
   computation accepts a custom `Ellipsoid` instance.
@@ -471,14 +472,15 @@ lat, lon, h = aer2geodetic(az, el, rng, lat0, lon0, h0)
 
 #### Geodesic polygon utilities
 
-Compute perimeter, ellipsoidal area, centroid, bounding box and
-geodesic interpolation for a polygon defined by latitude/longitude
-vertices. Polygons are auto-closed if not already.
+Compute perimeter, ellipsoidal area, centroid, bounding box,
+geodesic densification and geodesic interpolation for a polygon
+defined by latitude/longitude vertices. Polygons are auto-closed if
+not already.
 
 ```python
 from pygeodetics import (
     polygon_perimeter, polygon_area, polygon_centroid,
-    polygon_bounds, geodesic_interpolate,
+    polygon_bounds, polygon_densify, geodesic_interpolate,
 )
 
 # Polygon over southern Norway
@@ -490,7 +492,14 @@ print("Area     :", polygon_area(lats, lons),      "m^2") # ellipsoidal
 print("Centroid :", polygon_centroid(lats, lons))         # (lat, lon)
 print("Bounds   :", polygon_bounds(lats, lons))           # (lat_min, lon_min, lat_max, lon_max)
 
-# Sample 50 evenly spaced points along a geodesic
+# Densify: insert geodesic vertices so no segment exceeds 5 km. The
+# original vertices are preserved exactly; new ones lie on the true
+# geodesic of each edge. Useful before projecting a sparsely sampled
+# polygon to a flat map (avoids the straight-cartographic-edge artefact).
+dense_lats, dense_lons = polygon_densify(lats, lons, max_segment_length=5000.0)
+print(f"Densified vertex count: {len(dense_lats)}  (from {len(lats)})")
+
+# Sample 50 evenly spaced points along a single geodesic
 sample_lats, sample_lons = geodesic_interpolate(60.0, 10.0, 70.0, 25.0, n_points=50)
 ```
 

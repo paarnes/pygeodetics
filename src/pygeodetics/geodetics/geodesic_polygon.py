@@ -16,6 +16,7 @@ Provides:
 - :func:`polygon_area`      — signed ellipsoidal area via Green's theorem
 - :func:`polygon_centroid`  — area-weighted centroid (lat, lon)
 - :func:`polygon_bounds`    — bounding box ``(min_lat, min_lon, max_lat, max_lon)``
+- :func:`polygon_densify`   — add geodesic vertices so no edge exceeds a max length
 - :func:`geodesic_interpolate` — N intermediate points along a geodesic
 
 Sign convention for ``polygon_area``: positive for counter-clockwise
@@ -340,3 +341,132 @@ def geodesic_interpolate(lat1: float, lon1: float, lat2: float, lon2: float,
         lats[i] = lat_i
         lons[i] = lon_i
     return lats, lons
+
+
+def polygon_densify(lats, lons,
+                    max_segment_length: float,
+                    ellipsoid: Optional[Ellipsoid] = None,
+                    close: bool = True,
+                    ) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Densify a polygon by inserting geodesic vertices along every edge so
+    that no two consecutive output vertices are farther apart than
+    ``max_segment_length`` metres along the ellipsoid.
+
+    The added vertices lie exactly on the geodesic connecting the two
+    original vertices of each edge — they are obtained by sampling the
+    geodesic at evenly spaced fractions of its arc length using the
+    Vincenty direct problem. This preserves the true ellipsoidal shape
+    of the boundary, which is important when projecting the polygon to a
+    flat map (where straight cartographic edges between widely spaced
+    vertices distort the original geometry).
+
+    Parameters
+    ----------
+    lats, lons : array_like
+        Polygon vertices in degrees. Order is preserved. The polygon is
+        treated as closed: a closing edge from the last to the first
+        vertex is also densified (and its closing vertex is included in
+        the output if ``close=True``).
+    max_segment_length : float
+        Maximum allowed geodesic length (in metres) between consecutive
+        output vertices. Must be > 0. Existing edges shorter than this
+        are left untouched.
+    ellipsoid : Ellipsoid, optional
+        Reference ellipsoid (defaults to WGS84).
+    close : bool, default True
+        If True, the returned ring is explicitly closed (last vertex
+        equals the first). If False, the returned arrays end at the
+        densified version of the last input vertex (open ring).
+
+    Returns
+    -------
+    lats_out, lons_out : np.ndarray
+        Densified vertex arrays (1-D, dtype ``float``) in degrees.
+
+    Raises
+    ------
+    ValueError
+        If ``max_segment_length`` is not strictly positive, or if fewer
+        than three input vertices are supplied.
+
+    Notes
+    -----
+    - The number of intermediate points inserted on an edge of length
+      ``d`` is ``ceil(d / max_segment_length) - 1``, so each resulting
+      sub-segment has length ``d / ceil(d / max_segment_length)``,
+      which is ``<= max_segment_length`` by construction.
+    - The original input vertices are always preserved exactly; only
+      new points are inserted between them.
+    - For an open polyline (not a polygon), use
+      :func:`geodesic_interpolate` per segment instead.
+    """
+    ellipsoid = _resolve_ellipsoid(ellipsoid)
+    a, b = ellipsoid.a, ellipsoid.b
+
+    if not np.isfinite(max_segment_length) or max_segment_length <= 0.0:
+        raise ValueError("max_segment_length must be a positive, finite number of metres.")
+
+    lats_c, lons_c = _prepare_polygon(lats, lons)  # auto-closed ring
+    n_edges = len(lats_c) - 1
+
+    # First pass: compute every edge's geodesic length and starting azimuth,
+    # and how many sub-segments each edge needs. We need all of this up front
+    # so we can pre-allocate the output and avoid any Python-list growth.
+    az1s = np.empty(n_edges, dtype=float)
+    dists = np.empty(n_edges, dtype=float)
+    n_segs = np.empty(n_edges, dtype=np.int64)
+    for i in range(n_edges):
+        az1, _, dist = geodetic_inverse_problem(
+            a, b,
+            float(lats_c[i]), float(lons_c[i]),
+            float(lats_c[i + 1]), float(lons_c[i + 1]),
+            radians=False,
+        )
+        az1s[i] = az1
+        dists[i] = dist
+        n_segs[i] = max(1, int(np.ceil(dist / max_segment_length)))
+
+    # Total output length: each edge contributes n_seg points (n_seg-1
+    # interior + 1 end vertex), plus the very first start vertex.
+    total = int(n_segs.sum()) + 1
+    out_lats = np.empty(total, dtype=float)
+    out_lons = np.empty(total, dtype=float)
+    out_lats[0] = float(lats_c[0])
+    out_lons[0] = float(lons_c[0])
+
+    # Second pass: for each edge, compute all interior points in a single
+    # vectorised call to the Vincenty direct solver, then write the slice
+    # into the pre-allocated output (interior points + the original end
+    # vertex of the edge).
+    write = 1
+    for i in range(n_edges):
+        n_seg = int(n_segs[i])
+        end_lat = float(lats_c[i + 1])
+        end_lon = float(lons_c[i + 1])
+
+        if n_seg > 1:
+            # Distances at fractions 1/n_seg ... (n_seg-1)/n_seg of the edge.
+            sample_dists = dists[i] * (np.arange(1, n_seg, dtype=float) / n_seg)
+            lat_int, lon_int, _ = geodetic_direct_problem(
+                a, b,
+                float(lats_c[i]), float(lons_c[i]), float(az1s[i]),
+                sample_dists,
+                radians=False,
+            )
+            n_int = n_seg - 1
+            out_lats[write:write + n_int] = lat_int
+            out_lons[write:write + n_int] = lon_int
+            write += n_int
+
+        # Always preserve the edge's end vertex exactly (the original input).
+        out_lats[write] = end_lat
+        out_lons[write] = end_lon
+        write += 1
+
+    if not close:
+        # Drop the duplicated closing vertex.
+        out_lats = out_lats[:-1]
+        out_lons = out_lons[:-1]
+
+    return out_lats, out_lons

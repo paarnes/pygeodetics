@@ -50,6 +50,7 @@ from .geodetics.geodesic_polygon import (
     polygon_area,
     polygon_centroid,
     polygon_bounds,
+    polygon_densify,
     geodesic_interpolate,
 )
 from .geodetics.radius_of_curvature_azimuth import radius_of_curvature_azimuth
@@ -125,6 +126,7 @@ __all__ = [
     "polygon_area",
     "polygon_centroid",
     "polygon_bounds",
+    "polygon_densify",
     "geodesic_interpolate",
     "radius_of_curvature_azimuth",
     "vincenty_distance",

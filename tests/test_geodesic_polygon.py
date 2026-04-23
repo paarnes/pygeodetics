@@ -10,6 +10,7 @@ from pygeodetics import (
     polygon_area,
     polygon_centroid,
     polygon_bounds,
+    polygon_densify,
     geodesic_interpolate,
     geodetic_inverse_problem,
 )
@@ -134,3 +135,151 @@ def test_polygon_array_inputs():
     a = polygon_area(lats, lons)
     p = polygon_perimeter(lats, lons)
     assert a > 0 and p > 0
+
+
+def _max_segment_length(lats, lons):
+    ell = WGS84()
+    longest = 0.0
+    for i in range(len(lats) - 1):
+        _, _, d = geodetic_inverse_problem(
+            ell.a, ell.b, lats[i], lons[i], lats[i + 1], lons[i + 1]
+        )
+        longest = max(longest, d)
+    return longest
+
+
+def test_densify_max_segment_respected():
+    lats = [60.0, 60.0, 61.0, 61.0]
+    lons = [10.0, 11.0, 11.0, 10.0]
+    cap = 5000.0
+    dlats, dlons = polygon_densify(lats, lons, max_segment_length=cap)
+    # Add a small numerical tolerance for Vincenty round-off.
+    assert _max_segment_length(dlats, dlons) <= cap + 1e-6
+
+
+def test_densify_preserves_original_vertices_and_perimeter():
+    lats = [60.0, 60.0, 61.0, 61.0]
+    lons = [10.0, 11.0, 11.0, 10.0]
+    cap = 5000.0
+    dlats, dlons = polygon_densify(lats, lons, max_segment_length=cap)
+
+    # Perimeter must be preserved (same edges, just sampled densely).
+    p_orig = polygon_perimeter(lats, lons)
+    p_dens = polygon_perimeter(dlats, dlons)
+    assert p_dens == pytest.approx(p_orig, rel=0, abs=1e-3)
+
+    # Each original vertex must appear exactly in the densified output.
+    out_pts = set(zip(map(float, dlats), map(float, dlons)))
+    for la, lo in zip(lats, lons):
+        assert (float(la), float(lo)) in out_pts
+
+
+def test_densify_closed_vs_open_ring():
+    lats = [60.0, 60.0, 60.5, 60.5]
+    lons = [10.0, 11.0, 11.0, 10.0]
+    closed_lats, closed_lons = polygon_densify(lats, lons, 4000.0, close=True)
+    open_lats, open_lons = polygon_densify(lats, lons, 4000.0, close=False)
+    # Open is exactly one (closing) vertex shorter than closed.
+    assert len(closed_lats) == len(open_lats) + 1
+    # Closed ring's last point equals the first.
+    assert closed_lats[0] == closed_lats[-1]
+    assert closed_lons[0] == closed_lons[-1]
+
+
+def test_densify_no_op_when_cap_exceeds_longest_edge():
+    lats = [60.0, 60.0, 60.001, 60.001]
+    lons = [10.0, 10.001, 10.001, 10.0]
+    # Edges are ~110 m; cap is much larger -> no inserted vertices.
+    dlats, dlons = polygon_densify(lats, lons, max_segment_length=10_000.0)
+    # Output is the auto-closed input (4 vertices + 1 closing).
+    assert len(dlats) == 5
+    np.testing.assert_allclose(dlats[:4], lats)
+    np.testing.assert_allclose(dlons[:4], lons)
+
+
+def test_densify_inserted_points_lie_on_geodesic():
+    """
+    Each inserted vertex must lie on the geodesic of the edge it
+    subdivides — i.e. the sum of geodesic distances from edge start to
+    inserted point and from inserted point to edge end equals the
+    original edge length.
+    """
+    lats = [59.0, 59.0, 60.0]
+    lons = [10.0, 12.0, 12.0]
+    cap = 25_000.0
+    dlats, dlons = polygon_densify(lats, lons, max_segment_length=cap, close=False)
+
+    ell = WGS84()
+    # Find the first inserted point along edge 0 (between vertex 0 and 1)
+    # and verify it lies on that geodesic.
+    _, _, edge_len = geodetic_inverse_problem(
+        ell.a, ell.b, lats[0], lons[0], lats[1], lons[1]
+    )
+    # The first inserted point is at index 1 in the output (index 0 is the
+    # original start vertex). It must split the edge: dist(start, p) +
+    # dist(p, end) == edge_len.
+    _, _, d_start_to_p = geodetic_inverse_problem(
+        ell.a, ell.b, lats[0], lons[0], dlats[1], dlons[1]
+    )
+    _, _, d_p_to_end = geodetic_inverse_problem(
+        ell.a, ell.b, dlats[1], dlons[1], lats[1], lons[1]
+    )
+    assert d_start_to_p + d_p_to_end == pytest.approx(edge_len, rel=0, abs=1e-6)
+
+
+def test_densify_invalid_inputs():
+    lats = [60.0, 60.0, 61.0, 61.0]
+    lons = [10.0, 11.0, 11.0, 10.0]
+    with pytest.raises(ValueError):
+        polygon_densify(lats, lons, max_segment_length=0.0)
+    with pytest.raises(ValueError):
+        polygon_densify(lats, lons, max_segment_length=-100.0)
+    with pytest.raises(ValueError):
+        polygon_densify(lats, lons, max_segment_length=float("nan"))
+
+
+def test_densify_accepts_numpy_inputs():
+    lats = np.array([60.0, 60.0, 60.5, 60.5])
+    lons = np.array([10.0, 11.0, 11.0, 10.0])
+    dlats, dlons = polygon_densify(lats, lons, 10_000.0)
+    assert isinstance(dlats, np.ndarray)
+    assert isinstance(dlons, np.ndarray)
+    assert dlats.dtype == float and dlons.dtype == float
+
+
+# Reference values for a WGS84 triangle [(59,10), (60,10), (60,11.5)]
+# densified with max_segment_length = 50 000 m, generated independently
+# with a different geodesic library (GeographicLib via pyproj.Geod).
+# Our implementation must reproduce these to better than 1e-9 degrees
+# (~0.1 mm on the ground), i.e. agree with the reference engine within
+# floating-point round-off of the Vincenty iteration.
+_REF_DENSIFY_LATS = [
+    59.0,
+    59.333350468120514,
+    59.66668376426481,
+    60.0,
+    60.00212914232574,
+    60.0,
+    59.66860531053436,
+    59.335251085945316,
+    59.0,
+]
+_REF_DENSIFY_LONS = [
+    10.0,
+    10.0,
+    10.0,
+    10.0,
+    10.75,
+    11.5,
+    10.990094730652336,
+    10.490184377826507,
+    10.0,
+]
+
+
+def test_densify_matches_independent_geodesic_reference():
+    lats = [59.0, 60.0, 60.0]
+    lons = [10.0, 10.0, 11.5]
+    dlats, dlons = polygon_densify(lats, lons, max_segment_length=50_000.0)
+    np.testing.assert_allclose(dlats, _REF_DENSIFY_LATS, atol=1e-9)
+    np.testing.assert_allclose(dlons, _REF_DENSIFY_LONS, atol=1e-9)
