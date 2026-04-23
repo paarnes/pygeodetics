@@ -11,40 +11,91 @@
 </p>
 
 ## Introduction
-PyGeodetics is a Python library for performing geodetic computations like geodetic inverse and direct problems, conversions between different reference systems like ECEF to ENU, ECEF to geographic etc.
 
-## Features
-- Convert geodetic coordinates (latitude, longitude, height) to ECEF (Earth-Centered, Earth-Fixed)
-- Convert ECEF to geodetic coordinates
-- Transform ECEF to local ENU (East-North-Up) and NED (North-East-Down) systems
-- Solve geodetic inverse and direct problems
-- Distance between two points along the ellipsoid
-- Compute radius of curvature and mean radius of the reference ellipsoid
-- Support for different reference ellipsoids
+PyGeodetics is a pure-Python library for practical geodesy. It bundles
+coordinate conversions, map projections, geodesic problem solvers and
+local-frame utilities in a single, dependency-light package that works
+equally well with scalar inputs and NumPy arrays.
+
+**What's supported**
+
+- **Global coordinate conversions** — geodetic ↔ ECEF with three inverse
+  solvers (Bowring, Vermeille, Heiskanen–Moritz iterative).
+- **Local tangent frames** — full round-trip ENU / NED / ECEF / geodetic,
+  plus Azimuth / Elevation / Range (AER) look-angle conversions.
+- **Geodesic problems on the ellipsoid** — Vincenty forward (direct) and
+  inverse problems, Vincenty geodesic distance, meridional (M) and
+  prime-vertical (N) radii of curvature, radius of curvature for a given
+  azimuth (Euler), mean radius.
+- **Map projections** — Transverse Mercator (EPSG 9807), Mercator
+  Variant C (EPSG 1044), Polar Stereographic (EPSG 9810), with the grid
+  convergence and point-scale factor computed from either geographic or
+  projected coordinates.
+- **Grid systems** — turnkey UTM (`geodetic_to_utm` / `utm_to_geodetic`
+  with automatic zone and hemisphere handling) and UPS
+  (`geodetic_to_ups` / `ups_to_geodetic`) for the polar regions above
+  84°N / below 80°S.
+- **MGRS** — encoding and parsing across UTM and UPS at every standard
+  precision level (100 km → 1 m).
+- **EPSG helpers** — compute the EPSG code for any WGS84 / NAD83 UTM zone
+  or WGS84 UPS polar CRS from a simple arithmetic formula (no external
+  database or network call): `utm_epsg`, `ups_epsg`.
+- **Polygon utilities on the ellipsoid** — perimeter, area (with an
+  optional `geodesic=True` mode for accurate continental / hemispheric
+  polygons), centroid, bounding box, geodesic densification (insert
+  vertices so no edge exceeds a given length) and geodesic
+  interpolation between two points.
+- **Multiple reference ellipsoids** — WGS84 (default), GRS80,
+  International 1924, Clarke 1866, Bessel 1841 and Bessel Modified; any
+  computation accepts a custom `Ellipsoid` instance.
+- **NumPy-friendly** — every public function accepts scalars or arrays
+  and returns the same shape, making the library usable as a drop-in for
+  batch processing and notebooks.
 
 ## Installation
 ```sh
 pip install pygeodetics
 ```
 
-## TOC Code examples
+## Table of contents — code examples
+
+**Coordinate system conversions**
 - [Geodetic to ECEF](#geodetic-to-ecef)
 - [ECEF to Geodetic](#ecef-to-geodetic)
 - [ECEF to ENU](#ecef-to-enu)
 - [ECEF to NED](#ecef-to-ned)
+
+**Local tangent frames (ENU / NED / AER)**
+- [Bidirectional ENU / NED conversions](#bidirectional-enu--ned-conversions)
+- [Azimuth / Elevation / Range (AER) conversions](#azimuth--elevation--range-aer-conversions)
+
+**Geodesic problems on the ellipsoid**
 - [Geodetic Inverse Problem on the GRS80 ellipsoid](#geodetic-inverse-problem-on-the-grs80-ellipsoid)
 - [Geodetic Direct Problem on the GRS80 ellipsoid](#geodetic-direct-problem-on-the-grs80-ellipsoid)
-- [Radius of Curvature for a given Azimuth using Euler's equation.](#radius-of-curvature-for-a-given-azimuth-using-eulers-equation)
-- [Calculate the mean Radius of the International1924 Ellipsoid](#calculate-the-mean-radius-of-the-international1924-ellipsoid)
-- [Calculate the distance between two points on the ellipsoid (Vincenty formula)](#calculate-the-distance-between-two-points-on-the-ellipsoid-vincenty-formula)
-- [Calculate the meridional radius of curvature (M) at a given latitude](#calculate-the-meridional-radius-of-curvature-m-at-a-given-latitude)
-- [Calculate the normal radius of curvature (N) at a given latitude.](#calculate-the-normal-radius-of-curvature-n-at-a-given-latitude)
-- [Use of Mercator Variant C projection](#use-of-mercator-variant-c-projection)
-- [Use of Transverse Mercator projection](#use-of-transverse-mercator-projection)
+- [Distance between two points (Vincenty)](#calculate-the-distance-between-two-points-on-the-ellipsoid-vincenty-formula)
+- [Radius of curvature for a given azimuth (Euler)](#radius-of-curvature-for-a-given-azimuth-using-eulers-equation)
+- [Mean radius of the International 1924 ellipsoid](#calculate-the-mean-radius-of-the-international1924-ellipsoid)
+- [Meridional radius of curvature (M)](#calculate-the-meridional-radius-of-curvature-m-at-a-given-latitude)
+- [Normal radius of curvature (N)](#calculate-the-normal-radius-of-curvature-n-at-a-given-latitude)
+
+**Map projections**
+- [Mercator Variant C](#use-of-mercator-variant-c-projection)
+- [Transverse Mercator](#use-of-transverse-mercator-projection)
+- [UTM convenience API](#utm-convenience-api-geodetic_to_utm--utm_to_geodetic)
+- [UPS (Universal Polar Stereographic)](#ups-universal-polar-stereographic-for-the-poles)
+
+**Grid references and EPSG helpers**
+- [MGRS encoding and parsing](#mgrs-encoding-and-parsing)
+- [EPSG helpers](#epsg-helpers)
+
+**Polygon utilities**
+- [Geodesic polygon utilities](#geodesic-polygon-utilities)
 
 ## Usage Examples
 
-### Geodetic to ECEF
+### Coordinate system conversions
+
+#### Geodetic to ECEF
 ```python
 from pygeodetics import Geodetic
 
@@ -60,7 +111,7 @@ print(f"Geodetic to ECEF:\nX: {X:.4f} m\nY: {Y:.4f} m\nZ: {Z:.4f} m")
 
 ```
 
-### ECEF to Geodetic
+#### ECEF to Geodetic
 ```python
 from pygeodetics import Geodetic
 
@@ -71,7 +122,7 @@ print(f"ECEF to Geodetic:\nLatitude: {lat:.6f}°\nLongitude: {lon:.6f}°\nHeight
 
 ```
 
-### ECEF to ENU
+#### ECEF to ENU
 ```python
 from pygeodetics import Geodetic
 
@@ -83,7 +134,7 @@ print(f"ECEF to ENU:\nEast: {e:.6f} m\nNorth: {n:.6f} m\nUp: {u:.6f} m")
 
 ```
 
-### ECEF to NED
+#### ECEF to NED
 ```python
 from pygeodetics import Geodetic
 
@@ -95,7 +146,9 @@ print(f"ECEF to NED:\nNorth: {n:.6f} m\nEast: {e:.6f} m\nDown: {d:.6f} m")
 
 ```
 
-### Geodetic Inverse Problem on the GRS80 ellipsoid
+### Geodesic problems on the ellipsoid
+
+#### Geodetic Inverse Problem on the GRS80 ellipsoid
 ```python
 from pygeodetics import Geodetic
 from pygeodetics.Ellipsoid import GRS80
@@ -110,7 +163,7 @@ print(f"Geodetic Inverse Problem:\nForward Azimuth: {az1:.6f}°\nFinal Azimuth a
 
 ```
 
-### Geodetic Direct Problem on the GRS80 ellipsoid
+#### Geodetic Direct Problem on the GRS80 ellipsoid
 ```python
 from pygeodetics import Geodetic
 from pygeodetics.Ellipsoid import GRS80
@@ -126,7 +179,7 @@ print(f"Geodetic Direct Problem:\nDestination Latitude: {lat2:.6f}°\nDestinatio
 
 ```
 
-### Radius of Curvature for a given Azimuth using Euler's equation.
+#### Radius of Curvature for a given Azimuth using Euler's equation.
 ```python
 from pygeodetics import Geodetic
 
@@ -138,7 +191,7 @@ print(f"Radius of Curvature:\n{radius:.3f} meters")
 
 ```
 
-### Calculate the mean Radius of the International1924 Ellipsoid
+#### Calculate the mean Radius of the International1924 Ellipsoid
 ```python
 from pygeodetics import Geodetic
 from pygeodetics.Ellipsoid import International1924
@@ -150,7 +203,7 @@ print(f"Mean Radius of the Ellipsoid:\n{mean_radius:.3f} meters")
 
 ```
 
-### Calculate the distance between two points on the ellipsoid (Vincenty formula)
+#### Calculate the distance between two points on the ellipsoid (Vincenty formula)
 ```python
 from pygeodetics import Geodetic
 
@@ -167,7 +220,7 @@ print(f"Distances between the two points: {distances}")
 
 ```
 
-### Calculate the meridional radius of curvature (M) at a given latitude
+#### Calculate the meridional radius of curvature (M) at a given latitude
 
 ```python
 from pygeodetics import Geodetic
@@ -179,7 +232,7 @@ print(f"Mean Radius of the Ellipsoid at Latitude {lat}°: {mradius:.3f} meters")
 ```
 
 
-### Calculate the normal radius of curvature (N) at a given latitude.
+#### Calculate the normal radius of curvature (N) at a given latitude.
 
 ```python
 from pygeodetics import Geodetic
@@ -190,7 +243,9 @@ mradius = Geodetic().nrad(lat)
 print(f"Normal Radius of the Ellipsoid at Latitude {lat}°:\n{mradius:.3f} meters")
 ```
 
-### Use of Mercator Variant C projection
+### Map projections
+
+#### Use of Mercator Variant C projection
 ```python
 
 from pygeodetics import MercatorVariantC
@@ -211,7 +266,7 @@ print(f"Reversed lon = {rlon:.8f}°\nReversed lat = {rlat:.8f}°")
 ```
 
 
-### Use of Transverse Mercator projection
+#### Use of Transverse Mercator projection
 
 ```python
 import numpy as np
@@ -252,6 +307,222 @@ results = np.vstack((lon_back, lat_back, height)).T
 print(f"\nGeographic Coordinates TM:\n{results}")
 
 ```
+
+
+#### UTM convenience API (`geodetic_to_utm` / `utm_to_geodetic`)
+
+A turnkey wrapper around `TransverseMercator` that applies the standard UTM
+defaults (scale factor 0.9996, false easting 500 000 m, false northing
+0 m / 10 000 000 m for N / S hemisphere) and selects the UTM zone
+automatically from the longitude. Supports scalar and NumPy array inputs.
+
+```python
+from pygeodetics import geodetic_to_utm, utm_to_geodetic
+
+# Forward: geodetic -> UTM (auto zone, auto hemisphere)
+easting, northing, zone, band = geodetic_to_utm(lat=60.0, lon=10.75)
+print(f"E={easting:.3f}  N={northing:.3f}  zone={zone}{band}")
+
+# Inverse: UTM -> geodetic (zone + hemisphere required)
+lat, lon = utm_to_geodetic(easting, northing, zone=zone, hemisphere="N")
+print(f"lat={lat:.10f}°  lon={lon:.10f}°")
+
+# Southern hemisphere works the same way (false northing 10 000 000 m
+# is applied automatically on the forward call).
+e_s, n_s, zone_s, band_s = geodetic_to_utm(-33.8688, 151.2093)
+
+# Override the auto-selected zone (useful near zone borders or for the
+# Norway / Svalbard exceptions, which are not auto-applied).
+e, n, _, _ = geodetic_to_utm(60.0, 10.75, force_zone=33)
+
+# Custom ellipsoid
+from pygeodetics.Ellipsoid import GRS80
+geodetic_to_utm(60.0, 10.75, ellipsoid=GRS80())
+```
+
+
+#### UPS (Universal Polar Stereographic) for the poles
+
+UPS covers the polar regions where UTM is undefined (latitudes north of
+84°N and south of 80°S). It uses the standard UPS defaults: scale
+factor 0.994, false easting / northing 2 000 000 m, central meridian 0°.
+The hemisphere is selected automatically from the sign of the latitude.
+
+```python
+from pygeodetics import geodetic_to_ups, ups_to_geodetic
+
+# Forward (auto hemisphere)
+e, n, hemi = geodetic_to_ups(85.0, 0.0)
+print(f"E={e:.3f}  N={n:.3f}  hemi={hemi}")
+
+# Inverse (hemisphere required)
+lat, lon = ups_to_geodetic(e, n, hemisphere="N")
+
+# Both poles project to the false origin (2 000 000, 2 000 000)
+geodetic_to_ups(90.0, 0.0)    # -> (2_000_000, 2_000_000, 'N')
+geodetic_to_ups(-90.0, 0.0)   # -> (2_000_000, 2_000_000, 'S')
+```
+
+
+### Grid references and EPSG helpers
+
+#### MGRS encoding and parsing
+
+Encode any geodetic position as an MGRS string. The function
+automatically chooses UTM (latitudes -80°..84°) or UPS (polar regions)
+and supports all standard precision levels (0..5 → 100 km..1 m).
+
+```python
+from pygeodetics import to_mgrs, from_mgrs
+
+# Forward at 1 m precision
+to_mgrs(60.0, 10.75)                 # '32VNM9760352702'
+to_mgrs(-33.8688, 151.2093)          # '56HLH3436850948'  (southern hemisphere)
+to_mgrs(85.0, 0.0)                   # 'ZAB0000044542'    (UPS north)
+to_mgrs(-85.0, 45.0)                 # 'BFR9276792767'    (UPS south)
+
+# Lower precision
+to_mgrs(60.0, 10.75, precision=3)    # '32VNM976527'      (100 m)
+to_mgrs(60.0, 10.75, precision=0)    # '32VNM'            (100 km square only)
+
+# Parsing (returns the SW corner of the cell)
+lat, lon = from_mgrs('32VNM9760352702')
+lat, lon = from_mgrs('32V NM 97603 52702')   # spaces & lowercase accepted
+```
+
+
+#### EPSG helpers
+
+When you need to tag projected coordinates with a CRS identifier for
+downstream GIS tools (GDAL, QGIS, GeoJSON, etc.), these functions
+calculate the EPSG code on the fly using the standard EPSG numbering
+schemes — WGS84 UTM North is `32600 + zone`, South is `32700 + zone`,
+NAD83 UTM North is `26900 + zone`, and UPS North / South are the fixed
+codes `32661` / `32761`. No database, file, or network access is involved.
+
+```python
+from pygeodetics import utm_epsg, ups_epsg
+
+utm_epsg(32, 'N')                # 32632  (WGS84 / UTM zone 32N)
+utm_epsg(56, 'S')                # 32756  (WGS84 / UTM zone 56S)
+utm_epsg(15, 'N', datum='NAD83') # 26915  (NAD83 / UTM zone 15N)
+ups_epsg('N')                    # 32661  (WGS84 / UPS North)
+ups_epsg('S')                    # 32761  (WGS84 / UPS South)
+```
+
+### Local tangent frames (ENU / NED / AER)
+
+#### Bidirectional ENU / NED conversions
+
+Round-trip conversions between geodetic, ECEF, and the local tangent
+frames ENU (East-North-Up) and NED (North-East-Down). Cross-validated
+against `pymap3d` to ~1e-12 precision.
+
+```python
+from pygeodetics import (
+    geodetic2enu, enu2geodetic,
+    geodetic2ned, ned2geodetic,
+    enu2ecef, ned2ecef,
+)
+
+# Local observer at Oslo
+lat0, lon0, h0 = 59.91, 10.75, 100.0
+
+# Forward: geodetic -> ENU
+e, n, u = geodetic2enu(60.0, 10.9, 250.0, lat0, lon0, h0)
+print(f"ENU = ({e:.3f}, {n:.3f}, {u:.3f})")
+
+# Inverse: ENU -> geodetic (sub-millimetre round trip)
+lat, lon, h = enu2geodetic(e, n, u, lat0, lon0, h0)
+
+# NED works the same way
+n_, e_, d_ = geodetic2ned(60.0, 10.9, 250.0, lat0, lon0, h0)
+lat, lon, h = ned2geodetic(n_, e_, d_, lat0, lon0, h0)
+
+# Arrays are supported transparently
+import numpy as np
+lats = np.array([60.0, 60.1, 60.2])
+lons = np.array([10.8, 10.9, 11.0])
+hs   = np.array([100.0, 200.0, 300.0])
+e, n, u = geodetic2enu(lats, lons, hs, lat0, lon0, h0)
+```
+
+#### Azimuth / Elevation / Range (AER) conversions
+
+Convert between AER (azimuth clockwise from north in degrees,
+elevation above horizon in degrees, slant range in metres) and any of
+geodetic, ECEF, ENU or NED.
+
+```python
+from pygeodetics import (
+    geodetic2aer, aer2geodetic,
+    enu2aer, aer2enu,
+    ned2aer, aer2ned,
+    ecef2aer, aer2ecef,
+)
+
+# Look angle from observer to a satellite ground projection
+lat0, lon0, h0 = 59.91, 10.75, 100.0
+az, el, rng = geodetic2aer(60.0, 10.9, 250.0, lat0, lon0, h0)
+print(f"Azimuth = {az:.3f}°, Elevation = {el:.3f}°, Range = {rng:.1f} m")
+
+# Inverse: place a target at a given look-angle
+lat, lon, h = aer2geodetic(az, el, rng, lat0, lon0, h0)
+```
+
+### Polygon utilities on the ellipsoid
+
+#### Geodesic polygon utilities
+
+Compute perimeter, ellipsoidal area, centroid, bounding box,
+geodesic densification and geodesic interpolation for a polygon
+defined by latitude/longitude vertices. Polygons are auto-closed if
+not already.
+
+```python
+from pygeodetics import (
+    polygon_perimeter, polygon_area, polygon_centroid,
+    polygon_bounds, polygon_densify, geodesic_interpolate,
+)
+
+# Polygon over southern Norway
+lats = [60.0, 60.0, 60.5, 60.5]
+lons = [10.0, 11.0, 11.0, 10.0]
+
+print("Perimeter:", polygon_perimeter(lats, lons), "m")   # Vincenty sum
+print("Area     :", polygon_area(lats, lons),      "m^2") # ellipsoidal
+print("Centroid :", polygon_centroid(lats, lons))         # (lat, lon)
+print("Bounds   :", polygon_bounds(lats, lons))           # (lat_min, lon_min, lat_max, lon_max)
+
+# Densify: insert geodesic vertices so no segment exceeds 5 km. The
+# original vertices are preserved exactly; new ones lie on the true
+# geodesic of each edge. Useful before projecting a sparsely sampled
+# polygon to a flat map (avoids the straight-cartographic-edge artefact).
+dense_lats, dense_lons = polygon_densify(lats, lons, max_segment_length=5000.0)
+print(f"Densified vertex count: {len(dense_lats)}  (from {len(lats)})")
+
+# Sample 50 evenly spaced points along a single geodesic
+sample_lats, sample_lons = geodesic_interpolate(60.0, 10.0, 70.0, 25.0, n_points=50)
+
+# True geodesic-polygon area for a continental-scale polygon
+# (the rhumb-edge formula is off by ~1% at this size; geodesic mode
+# matches GeographicLib to ~1 ppm).
+us_lats = [49.0, 49.0, 25.0, 25.0]
+us_lons = [-125.0, -67.0, -67.0, -125.0]
+print("US bbox area:", polygon_area(us_lats, us_lons, geodesic=True), "m^2")
+```
+
+> **Note on area** — by default `polygon_area` integrates the authalic
+> latitude along rhumb-line edges (Green's theorem on the ellipsoid).
+> It matches `pyproj.Geod.polygon_area_perimeter` to better than 1 ppm
+> for small and medium polygons (degrees-scale). For continental-scale
+> or hemispheric polygons the rhumb / geodesic discrepancy can grow to
+> a fraction of a percent — pass `geodesic=True` to compute the true
+> geodesic-polygon area instead. In that mode the polygon is internally
+> densified (default cap 10 km per segment, controllable via
+> `max_segment_length`) before the area integral, which converges to
+> the GeographicLib reference to better than 1 ppm even for
+> hemispheric polygons.
 
 
 ## Math and the Theory Basis
