@@ -11,54 +11,88 @@
 </p>
 
 ## Introduction
-PyGeodetics is a Python library for performing geodetic computations like geodetic inverse and direct problems, conversions between different reference systems like ECEF to ENU, ECEF to geographic etc.
 
-## Features
-- Convert geodetic coordinates (latitude, longitude, height) to ECEF (Earth-Centered, Earth-Fixed)
-- Convert ECEF to geodetic coordinates
-- Transform ECEF to local ENU (East-North-Up) and NED (North-East-Down) systems
-- Solve geodetic inverse and direct problems
-- Distance between two points along the ellipsoid
-- Compute radius of curvature and mean radius of the reference ellipsoid
-- Support for different reference ellipsoids
-- High-level UTM API with automatic zone and hemisphere handling (`geodetic_to_utm` / `utm_to_geodetic`)
-- Universal Polar Stereographic (UPS) for the polar regions (`geodetic_to_ups` / `ups_to_geodetic`)
-- MGRS encoding and parsing across UTM and UPS, all standard precision levels (`to_mgrs` / `from_mgrs`)
-- EPSG-code helpers for the WGS84 UTM and UPS zones (`utm_epsg`, `ups_epsg`)
-- Bidirectional local-frame conversions: ENU ↔ geodetic, NED ↔ geodetic, ENU ↔ ECEF, NED ↔ ECEF
-- Azimuth/Elevation/Range (AER) conversions to and from ENU, NED, ECEF and geodetic
-- Geodesic polygon utilities: perimeter, area (rhumb-line approximation), centroid, bounding box, geodesic interpolation
+PyGeodetics is a pure-Python library for practical geodesy. It bundles
+coordinate conversions, map projections, geodesic problem solvers and
+local-frame utilities in a single, dependency-light package that works
+equally well with scalar inputs and NumPy arrays.
+
+**What's supported**
+
+- **Global coordinate conversions** — geodetic ↔ ECEF with three inverse
+  solvers (Bowring, Vermeille, Heiskanen–Moritz iterative).
+- **Local tangent frames** — full round-trip ENU / NED / ECEF / geodetic,
+  plus Azimuth / Elevation / Range (AER) look-angle conversions.
+- **Geodesic problems on the ellipsoid** — Vincenty forward (direct) and
+  inverse problems, Vincenty geodesic distance, meridional (M) and
+  prime-vertical (N) radii of curvature, radius of curvature for a given
+  azimuth (Euler), mean radius.
+- **Map projections** — Transverse Mercator (EPSG 9807), Mercator
+  Variant C (EPSG 1044), Polar Stereographic (EPSG 9810), with the grid
+  convergence and point-scale factor computed from either geographic or
+  projected coordinates.
+- **Grid systems** — turnkey UTM (`geodetic_to_utm` / `utm_to_geodetic`
+  with automatic zone and hemisphere handling) and UPS
+  (`geodetic_to_ups` / `ups_to_geodetic`) for the polar regions above
+  84°N / below 80°S.
+- **MGRS** — encoding and parsing across UTM and UPS at every standard
+  precision level (100 km → 1 m).
+- **EPSG helpers** — compute the EPSG code for any WGS84 / NAD83 UTM zone
+  or WGS84 UPS polar CRS from a simple arithmetic formula (no external
+  database or network call): `utm_epsg`, `ups_epsg`.
+- **Polygon utilities on the ellipsoid** — perimeter, area, centroid,
+  bounding box and geodesic interpolation between two points.
+- **Multiple reference ellipsoids** — WGS84 (default), GRS80,
+  International 1924, Clarke 1866, Bessel 1841 and Bessel Modified; any
+  computation accepts a custom `Ellipsoid` instance.
+- **NumPy-friendly** — every public function accepts scalars or arrays
+  and returns the same shape, making the library usable as a drop-in for
+  batch processing and notebooks.
 
 ## Installation
 ```sh
 pip install pygeodetics
 ```
 
-## TOC Code examples
+## Table of contents — code examples
+
+**Coordinate system conversions**
 - [Geodetic to ECEF](#geodetic-to-ecef)
 - [ECEF to Geodetic](#ecef-to-geodetic)
 - [ECEF to ENU](#ecef-to-enu)
 - [ECEF to NED](#ecef-to-ned)
-- [Geodetic Inverse Problem on the GRS80 ellipsoid](#geodetic-inverse-problem-on-the-grs80-ellipsoid)
-- [Geodetic Direct Problem on the GRS80 ellipsoid](#geodetic-direct-problem-on-the-grs80-ellipsoid)
-- [Radius of Curvature for a given Azimuth using Euler's equation.](#radius-of-curvature-for-a-given-azimuth-using-eulers-equation)
-- [Calculate the mean Radius of the International1924 Ellipsoid](#calculate-the-mean-radius-of-the-international1924-ellipsoid)
-- [Calculate the distance between two points on the ellipsoid (Vincenty formula)](#calculate-the-distance-between-two-points-on-the-ellipsoid-vincenty-formula)
-- [Calculate the meridional radius of curvature (M) at a given latitude](#calculate-the-meridional-radius-of-curvature-m-at-a-given-latitude)
-- [Calculate the normal radius of curvature (N) at a given latitude.](#calculate-the-normal-radius-of-curvature-n-at-a-given-latitude)
-- [Use of Mercator Variant C projection](#use-of-mercator-variant-c-projection)
-- [Use of Transverse Mercator projection](#use-of-transverse-mercator-projection)
-- [UTM convenience API (geodetic_to_utm / utm_to_geodetic)](#utm-convenience-api-geodetic_to_utm--utm_to_geodetic)
-- [UPS (Universal Polar Stereographic) for the poles](#ups-universal-polar-stereographic-for-the-poles)
-- [MGRS encoding and parsing](#mgrs-encoding-and-parsing)
-- [EPSG helpers](#epsg-helpers)
+
+**Local tangent frames (ENU / NED / AER)**
 - [Bidirectional ENU / NED conversions](#bidirectional-enu--ned-conversions)
 - [Azimuth / Elevation / Range (AER) conversions](#azimuth--elevation--range-aer-conversions)
+
+**Geodesic problems on the ellipsoid**
+- [Geodetic Inverse Problem on the GRS80 ellipsoid](#geodetic-inverse-problem-on-the-grs80-ellipsoid)
+- [Geodetic Direct Problem on the GRS80 ellipsoid](#geodetic-direct-problem-on-the-grs80-ellipsoid)
+- [Distance between two points (Vincenty)](#calculate-the-distance-between-two-points-on-the-ellipsoid-vincenty-formula)
+- [Radius of curvature for a given azimuth (Euler)](#radius-of-curvature-for-a-given-azimuth-using-eulers-equation)
+- [Mean radius of the International 1924 ellipsoid](#calculate-the-mean-radius-of-the-international1924-ellipsoid)
+- [Meridional radius of curvature (M)](#calculate-the-meridional-radius-of-curvature-m-at-a-given-latitude)
+- [Normal radius of curvature (N)](#calculate-the-normal-radius-of-curvature-n-at-a-given-latitude)
+
+**Map projections**
+- [Mercator Variant C](#use-of-mercator-variant-c-projection)
+- [Transverse Mercator](#use-of-transverse-mercator-projection)
+- [UTM convenience API](#utm-convenience-api-geodetic_to_utm--utm_to_geodetic)
+- [UPS (Universal Polar Stereographic)](#ups-universal-polar-stereographic-for-the-poles)
+
+**Grid references and EPSG helpers**
+- [MGRS encoding and parsing](#mgrs-encoding-and-parsing)
+- [EPSG helpers](#epsg-helpers)
+
+**Polygon utilities**
 - [Geodesic polygon utilities](#geodesic-polygon-utilities)
 
 ## Usage Examples
 
-### Geodetic to ECEF
+### Coordinate system conversions
+
+#### Geodetic to ECEF
 ```python
 from pygeodetics import Geodetic
 
@@ -74,7 +108,7 @@ print(f"Geodetic to ECEF:\nX: {X:.4f} m\nY: {Y:.4f} m\nZ: {Z:.4f} m")
 
 ```
 
-### ECEF to Geodetic
+#### ECEF to Geodetic
 ```python
 from pygeodetics import Geodetic
 
@@ -85,7 +119,7 @@ print(f"ECEF to Geodetic:\nLatitude: {lat:.6f}°\nLongitude: {lon:.6f}°\nHeight
 
 ```
 
-### ECEF to ENU
+#### ECEF to ENU
 ```python
 from pygeodetics import Geodetic
 
@@ -97,7 +131,7 @@ print(f"ECEF to ENU:\nEast: {e:.6f} m\nNorth: {n:.6f} m\nUp: {u:.6f} m")
 
 ```
 
-### ECEF to NED
+#### ECEF to NED
 ```python
 from pygeodetics import Geodetic
 
@@ -109,7 +143,9 @@ print(f"ECEF to NED:\nNorth: {n:.6f} m\nEast: {e:.6f} m\nDown: {d:.6f} m")
 
 ```
 
-### Geodetic Inverse Problem on the GRS80 ellipsoid
+### Geodesic problems on the ellipsoid
+
+#### Geodetic Inverse Problem on the GRS80 ellipsoid
 ```python
 from pygeodetics import Geodetic
 from pygeodetics.Ellipsoid import GRS80
@@ -124,7 +160,7 @@ print(f"Geodetic Inverse Problem:\nForward Azimuth: {az1:.6f}°\nFinal Azimuth a
 
 ```
 
-### Geodetic Direct Problem on the GRS80 ellipsoid
+#### Geodetic Direct Problem on the GRS80 ellipsoid
 ```python
 from pygeodetics import Geodetic
 from pygeodetics.Ellipsoid import GRS80
@@ -140,7 +176,7 @@ print(f"Geodetic Direct Problem:\nDestination Latitude: {lat2:.6f}°\nDestinatio
 
 ```
 
-### Radius of Curvature for a given Azimuth using Euler's equation.
+#### Radius of Curvature for a given Azimuth using Euler's equation.
 ```python
 from pygeodetics import Geodetic
 
@@ -152,7 +188,7 @@ print(f"Radius of Curvature:\n{radius:.3f} meters")
 
 ```
 
-### Calculate the mean Radius of the International1924 Ellipsoid
+#### Calculate the mean Radius of the International1924 Ellipsoid
 ```python
 from pygeodetics import Geodetic
 from pygeodetics.Ellipsoid import International1924
@@ -164,7 +200,7 @@ print(f"Mean Radius of the Ellipsoid:\n{mean_radius:.3f} meters")
 
 ```
 
-### Calculate the distance between two points on the ellipsoid (Vincenty formula)
+#### Calculate the distance between two points on the ellipsoid (Vincenty formula)
 ```python
 from pygeodetics import Geodetic
 
@@ -181,7 +217,7 @@ print(f"Distances between the two points: {distances}")
 
 ```
 
-### Calculate the meridional radius of curvature (M) at a given latitude
+#### Calculate the meridional radius of curvature (M) at a given latitude
 
 ```python
 from pygeodetics import Geodetic
@@ -193,7 +229,7 @@ print(f"Mean Radius of the Ellipsoid at Latitude {lat}°: {mradius:.3f} meters")
 ```
 
 
-### Calculate the normal radius of curvature (N) at a given latitude.
+#### Calculate the normal radius of curvature (N) at a given latitude.
 
 ```python
 from pygeodetics import Geodetic
@@ -204,7 +240,9 @@ mradius = Geodetic().nrad(lat)
 print(f"Normal Radius of the Ellipsoid at Latitude {lat}°:\n{mradius:.3f} meters")
 ```
 
-### Use of Mercator Variant C projection
+### Map projections
+
+#### Use of Mercator Variant C projection
 ```python
 
 from pygeodetics import MercatorVariantC
@@ -225,7 +263,7 @@ print(f"Reversed lon = {rlon:.8f}°\nReversed lat = {rlat:.8f}°")
 ```
 
 
-### Use of Transverse Mercator projection
+#### Use of Transverse Mercator projection
 
 ```python
 import numpy as np
@@ -268,7 +306,7 @@ print(f"\nGeographic Coordinates TM:\n{results}")
 ```
 
 
-### UTM convenience API (`geodetic_to_utm` / `utm_to_geodetic`)
+#### UTM convenience API (`geodetic_to_utm` / `utm_to_geodetic`)
 
 A turnkey wrapper around `TransverseMercator` that applies the standard UTM
 defaults (scale factor 0.9996, false easting 500 000 m, false northing
@@ -300,7 +338,7 @@ geodetic_to_utm(60.0, 10.75, ellipsoid=GRS80())
 ```
 
 
-### UPS (Universal Polar Stereographic) for the poles
+#### UPS (Universal Polar Stereographic) for the poles
 
 UPS covers the polar regions where UTM is undefined (latitudes north of
 84°N and south of 80°S). It uses the standard UPS defaults: scale
@@ -323,7 +361,9 @@ geodetic_to_ups(-90.0, 0.0)   # -> (2_000_000, 2_000_000, 'S')
 ```
 
 
-### MGRS encoding and parsing
+### Grid references and EPSG helpers
+
+#### MGRS encoding and parsing
 
 Encode any geodetic position as an MGRS string. The function
 automatically chooses UTM (latitudes -80°..84°) or UPS (polar regions)
@@ -348,19 +388,28 @@ lat, lon = from_mgrs('32V NM 97603 52702')   # spaces & lowercase accepted
 ```
 
 
-### EPSG helpers
+#### EPSG helpers
+
+When you need to tag projected coordinates with a CRS identifier for
+downstream GIS tools (GDAL, QGIS, GeoJSON, etc.), these functions
+calculate the EPSG code on the fly using the standard EPSG numbering
+schemes — WGS84 UTM North is `32600 + zone`, South is `32700 + zone`,
+NAD83 UTM North is `26900 + zone`, and UPS North / South are the fixed
+codes `32661` / `32761`. No database, file, or network access is involved.
 
 ```python
 from pygeodetics import utm_epsg, ups_epsg
 
-utm_epsg(32, 'N')                # 32632  (WGS84 UTM zone 32N)
-utm_epsg(56, 'S')                # 32756  (WGS84 UTM zone 56S)
-utm_epsg(15, 'N', datum='NAD83') # 26915
-ups_epsg('N')                    # 32661  (WGS84 UPS North)
-ups_epsg('S')                    # 32761  (WGS84 UPS South)
+utm_epsg(32, 'N')                # 32632  (WGS84 / UTM zone 32N)
+utm_epsg(56, 'S')                # 32756  (WGS84 / UTM zone 56S)
+utm_epsg(15, 'N', datum='NAD83') # 26915  (NAD83 / UTM zone 15N)
+ups_epsg('N')                    # 32661  (WGS84 / UPS North)
+ups_epsg('S')                    # 32761  (WGS84 / UPS South)
 ```
 
-### Bidirectional ENU / NED conversions
+### Local tangent frames (ENU / NED / AER)
+
+#### Bidirectional ENU / NED conversions
 
 Round-trip conversions between geodetic, ECEF, and the local tangent
 frames ENU (East-North-Up) and NED (North-East-Down). Cross-validated
@@ -395,7 +444,7 @@ hs   = np.array([100.0, 200.0, 300.0])
 e, n, u = geodetic2enu(lats, lons, hs, lat0, lon0, h0)
 ```
 
-### Azimuth / Elevation / Range (AER) conversions
+#### Azimuth / Elevation / Range (AER) conversions
 
 Convert between AER (azimuth clockwise from north in degrees,
 elevation above horizon in degrees, slant range in metres) and any of
@@ -418,7 +467,9 @@ print(f"Azimuth = {az:.3f}°, Elevation = {el:.3f}°, Range = {rng:.1f} m")
 lat, lon, h = aer2geodetic(az, el, rng, lat0, lon0, h0)
 ```
 
-### Geodesic polygon utilities
+### Polygon utilities on the ellipsoid
+
+#### Geodesic polygon utilities
 
 Compute perimeter, ellipsoidal area, centroid, bounding box and
 geodesic interpolation for a polygon defined by latitude/longitude
