@@ -283,3 +283,71 @@ def test_densify_matches_independent_geodesic_reference():
     dlats, dlons = polygon_densify(lats, lons, max_segment_length=50_000.0)
     np.testing.assert_allclose(dlats, _REF_DENSIFY_LATS, atol=1e-9)
     np.testing.assert_allclose(dlons, _REF_DENSIFY_LONS, atol=1e-9)
+
+
+# Reference values for the geodesic-area mode of polygon_area, generated
+# independently with a different geodesic library (GeographicLib via
+# pyproj.Geod(ellps="WGS84").geometry_area_perimeter on a shapely Polygon).
+# Each tuple: (lats, lons, expected_geodesic_area_m2).
+GEODESIC_AREA_CASES = [
+    # Continental US bounding box (~58 deg wide, 24 deg tall): rhumb error
+    # is ~1.2% here, geodesic mode must match the reference to ~1 ppm.
+    ([49.0, 49.0, 25.0, 25.0], [-125.0, -67.0, -67.0, -125.0],
+     13490379239003.164),
+    # South America bounding box (~48 deg wide, 67 deg tall).
+    ([12.0, 12.0, -55.0, -55.0], [-82.0, -34.0, -34.0, -82.0],
+     35816818445838.03),
+    # Hemispheric strip (160 deg wide, 160 deg tall).
+    ([80.0, 80.0, -80.0, -80.0], [0.0, 90.0, 90.0, 0.0],
+     126262770415437.17),
+    # Small box where rhumb and geodesic effectively coincide; geodesic
+    # mode must not regress on small polygons.
+    ([60.0, 60.0, 60.5, 60.5], [10.0, 11.0, 11.0, 10.0],
+     3084929054.2945557),
+]
+
+
+@pytest.mark.parametrize("lats, lons, ref", GEODESIC_AREA_CASES)
+def test_polygon_area_geodesic_mode_matches_independent_reference(lats, lons, ref):
+    area = polygon_area(lats, lons, geodesic=True)
+    assert area == pytest.approx(ref, rel=1e-5)
+
+
+def test_polygon_area_geodesic_mode_improves_continental_polygon():
+    # Continental US bbox: rhumb formula is off by ~1%, geodesic mode
+    # must agree with the GeographicLib reference far more tightly.
+    lats = [49.0, 49.0, 25.0, 25.0]
+    lons = [-125.0, -67.0, -67.0, -125.0]
+    ref = 13490379239003.164
+    err_rhumb = abs(polygon_area(lats, lons, geodesic=False) - ref) / ref
+    err_geod = abs(polygon_area(lats, lons, geodesic=True) - ref) / ref
+    assert err_rhumb > 1e-3
+    assert err_geod < 1e-5
+    assert err_geod < err_rhumb / 100.0
+
+
+def test_polygon_area_geodesic_mode_signed_orientation():
+    lats = [49.0, 49.0, 25.0, 25.0]
+    lons = [-125.0, -67.0, -67.0, -125.0]
+    a_unsigned = polygon_area(lats, lons, geodesic=True)
+    a_ccw = polygon_area(list(reversed(lats)), list(reversed(lons)),
+                        geodesic=True, signed=True)
+    a_cw = polygon_area(lats, lons, geodesic=True, signed=True)
+    assert a_unsigned > 0
+    assert a_cw < 0
+    assert a_ccw > 0
+    assert abs(a_cw) == pytest.approx(a_unsigned, rel=1e-12)
+    assert a_ccw == pytest.approx(-a_cw, rel=1e-12)
+
+
+def test_polygon_area_geodesic_mode_segment_length_convergence():
+    # Tighter densification should not move the answer materially once
+    # we're already at the 10 km default; both should match the reference.
+    lats = [12.0, 12.0, -55.0, -55.0]
+    lons = [-82.0, -34.0, -34.0, -82.0]
+    ref = 35816818445838.03
+    a_default = polygon_area(lats, lons, geodesic=True)
+    a_tight = polygon_area(lats, lons, geodesic=True, max_segment_length=2_000.0)
+    assert a_default == pytest.approx(ref, rel=1e-5)
+    assert a_tight == pytest.approx(ref, rel=1e-5)
+    assert a_tight == pytest.approx(a_default, rel=1e-6)

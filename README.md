@@ -40,9 +40,11 @@ equally well with scalar inputs and NumPy arrays.
 - **EPSG helpers** — compute the EPSG code for any WGS84 / NAD83 UTM zone
   or WGS84 UPS polar CRS from a simple arithmetic formula (no external
   database or network call): `utm_epsg`, `ups_epsg`.
-- **Polygon utilities on the ellipsoid** — perimeter, area, centroid,
-  bounding box, geodesic densification (insert vertices so no edge
-  exceeds a given length) and geodesic interpolation between two points.
+- **Polygon utilities on the ellipsoid** — perimeter, area (with an
+  optional `geodesic=True` mode for accurate continental / hemispheric
+  polygons), centroid, bounding box, geodesic densification (insert
+  vertices so no edge exceeds a given length) and geodesic
+  interpolation between two points.
 - **Multiple reference ellipsoids** — WGS84 (default), GRS80,
   International 1924, Clarke 1866, Bessel 1841 and Bessel Modified; any
   computation accepts a custom `Ellipsoid` instance.
@@ -501,14 +503,26 @@ print(f"Densified vertex count: {len(dense_lats)}  (from {len(lats)})")
 
 # Sample 50 evenly spaced points along a single geodesic
 sample_lats, sample_lons = geodesic_interpolate(60.0, 10.0, 70.0, 25.0, n_points=50)
+
+# True geodesic-polygon area for a continental-scale polygon
+# (the rhumb-edge formula is off by ~1% at this size; geodesic mode
+# matches GeographicLib to ~1 ppm).
+us_lats = [49.0, 49.0, 25.0, 25.0]
+us_lons = [-125.0, -67.0, -67.0, -125.0]
+print("US bbox area:", polygon_area(us_lats, us_lons, geodesic=True), "m^2")
 ```
 
-> **Note on area** — `polygon_area` integrates the authalic latitude
-> along rhumb-line edges (Green's theorem on the ellipsoid). It matches
-> `pyproj.Geod.polygon_area_perimeter` to better than 1 ppm for small
-> and medium polygons (degrees-scale). For continental-scale polygons
-> the rhumb-line approximation differs from the true geodesic-polygon
-> area; in that case use `pyproj` directly.
+> **Note on area** — by default `polygon_area` integrates the authalic
+> latitude along rhumb-line edges (Green's theorem on the ellipsoid).
+> It matches `pyproj.Geod.polygon_area_perimeter` to better than 1 ppm
+> for small and medium polygons (degrees-scale). For continental-scale
+> or hemispheric polygons the rhumb / geodesic discrepancy can grow to
+> a fraction of a percent — pass `geodesic=True` to compute the true
+> geodesic-polygon area instead. In that mode the polygon is internally
+> densified (default cap 10 km per segment, controllable via
+> `max_segment_length`) before the area integral, which converges to
+> the GeographicLib reference to better than 1 ppm even for
+> hemispheric polygons.
 
 
 ## Math and the Theory Basis

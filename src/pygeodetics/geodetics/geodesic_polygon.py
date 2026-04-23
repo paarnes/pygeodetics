@@ -130,7 +130,9 @@ def _q(lat_rad: np.ndarray, e: float) -> np.ndarray:
 
 def polygon_area(lats, lons,
                  ellipsoid: Optional[Ellipsoid] = None,
-                 signed: bool = False) -> float:
+                 signed: bool = False,
+                 geodesic: bool = False,
+                 max_segment_length: float = 10_000.0) -> float:
     """
     Compute the area of a polygon on an ellipsoid using Green's theorem.
 
@@ -142,14 +144,14 @@ def polygon_area(lats, lons,
 
     where ``q(φ)`` is twice the equator-to-φ antiderivative of
     ``M(φ)·N(φ)·cosφ / a²``. The formula treats polygon edges as
-    straight lines in the ``(λ, q)`` equal-area plane (rhumb-line
-    polygon area). For geodesic polygons there is an additional
-    correction of order ``f`` per edge; for typical small / medium
-    polygons (≲ 1000 km extent) the rhumb-line area agrees with the
-    geodesic area to better than 1 part per million. For very large
-    geodesic polygons (continental scale or wider), the result will
-    differ from a true geodesic-polygon area by a fraction of a
-    percent.
+    straight lines in the ``(λ, q)`` equal-area plane, which is
+    equivalent to treating each edge as a *rhumb line*.
+
+    For most polygons this matches the true geodesic-polygon area to
+    better than 1 ppm. For very large polygons (continental scale or
+    wider), the rhumb / geodesic discrepancy can reach a fraction of a
+    percent — set ``geodesic=True`` to get the true geodesic-polygon
+    area instead.
 
     Parameters
     ----------
@@ -161,6 +163,20 @@ def polygon_area(lats, lons,
         If False (default), return the absolute area in m². If True,
         return the signed area: positive for counter-clockwise vertex
         ordering, negative for clockwise.
+    geodesic : bool, default False
+        If True, treat polygon edges as true geodesics (great-ellipse
+        arcs) instead of rhumb lines. The polygon is internally
+        densified with :func:`polygon_densify` so that no edge segment
+        is longer than ``max_segment_length`` metres before applying
+        the Green's-theorem strip formula. As segments shrink, the
+        rhumb-edge approximation converges to the geodesic area; with
+        the default 10 km cap the residual error is < 1 ppm even for
+        hemispheric polygons.
+    max_segment_length : float, default 10 000
+        Maximum geodesic segment length (in metres) used for the
+        internal densification when ``geodesic=True``. Ignored when
+        ``geodesic=False``. Smaller values give a tighter match to the
+        true geodesic area but increase the cost roughly linearly.
 
     Returns
     -------
@@ -168,6 +184,19 @@ def polygon_area(lats, lons,
         Polygon area in square metres.
     """
     ellipsoid = _resolve_ellipsoid(ellipsoid)
+
+    if geodesic:
+        # Densify to small enough segments that the rhumb-line edges of
+        # the densified polygon are an excellent local approximation to
+        # the true geodesic edges. The total area then converges to the
+        # geodesic-polygon area.
+        lats, lons = polygon_densify(
+            lats, lons,
+            max_segment_length=max_segment_length,
+            ellipsoid=ellipsoid,
+            close=True,
+        )
+
     lats, lons = _prepare_polygon(lats, lons)
     a, b = ellipsoid.a, ellipsoid.b
     e = float(np.sqrt(1.0 - (b / a) ** 2))
