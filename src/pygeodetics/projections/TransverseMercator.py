@@ -41,6 +41,8 @@ Usage Example:
 import numpy as np
 from typing import Tuple, Literal, Union, List
 
+from ._kruger import KrugerTM
+
 
 class TransverseMercator:
     """
@@ -99,19 +101,30 @@ class TransverseMercator:
         self.a = a
         self.f = f
         self.n = f / (2 - f)
-        self.B = a / (1 + self.n) * (1 + self.n**2 / 4 + self.n**4 / 64)
+        self.B = a / (1 + self.n) * (1 + self.n**2 / 4 + self.n**4 / 64 + self.n**6 / 256)
         self.h_coeffs = self._calculate_h_coefficients()
+        self._kruger = KrugerTM(a, a * (1 - f))
 
     def _calculate_h_coefficients(self):
         """
-        Calculate the coefficients h1, h2, h3, h4 for the series expansion.
+        Calculate the coefficients h1 ... h6 for the forward series expansion.
+
+        These are Kruger's alpha coefficients in the third flattening ``n``, carried to
+        ``n**6`` (Karney 2011, eq. 35). Since ``n`` is about ``1/599`` for terrestrial
+        ellipsoids, the first neglected term is of order ``1e-19`` and the series is
+        therefore exact to double precision.
         """
         n = self.n
         return {
-            "h1": n / 2 - (2 / 3) * n**2 + (5 / 16) * n**3 + (41 / 180) * n**4,
-            "h2": (13 / 48) * n**2 - (3 / 5) * n**3 + (557 / 1440) * n**4,
-            "h3": (61 / 240) * n**3 - (103 / 140) * n**4,
-            "h4": (49561 / 161280) * n**4
+            "h1": n / 2 - (2 / 3) * n**2 + (5 / 16) * n**3 + (41 / 180) * n**4
+                  - (127 / 288) * n**5 + (7891 / 37800) * n**6,
+            "h2": (13 / 48) * n**2 - (3 / 5) * n**3 + (557 / 1440) * n**4
+                  + (281 / 630) * n**5 - (1983433 / 1935360) * n**6,
+            "h3": (61 / 240) * n**3 - (103 / 140) * n**4
+                  + (15061 / 26880) * n**5 + (167603 / 181440) * n**6,
+            "h4": (49561 / 161280) * n**4 - (179 / 168) * n**5 + (6601661 / 7257600) * n**6,
+            "h5": (34729 / 80640) * n**5 - (3418889 / 1995840) * n**6,
+            "h6": (212378941 / 319334400) * n**6,
         }
 
     def lat_orig_is_close_to_poles(self) -> bool:
@@ -168,11 +181,9 @@ class TransverseMercator:
         xi_o0 = np.arcsin(np.sin(beta_o))
 
         # Compute xi_o using the series expansion
-        xi_o1 = self.h_coeffs[f"h1"] * np.sin(2 * xi_o0)
-        xi_o2 = self.h_coeffs[f"h2"] * np.sin(4 * xi_o0)
-        xi_o3 = self.h_coeffs[f"h3"] * np.sin(6 * xi_o0)
-        xi_o4 = self.h_coeffs[f"h4"] * np.sin(8 * xi_o0)
-        xi_o = xi_o0 + xi_o1 + xi_o2 + xi_o3 + xi_o4
+        xi_o = xi_o0
+        for i in range(1, 7):
+            xi_o = xi_o + self.h_coeffs[f"h{i}"] * np.sin(2 * i * xi_o0)
 
         # Compute M0
         M0 = self.B * xi_o
@@ -192,7 +203,7 @@ class TransverseMercator:
         """
         xi = xi0.copy()
         eta = eta0.copy()
-        for i in range(1, 5):
+        for i in range(1, 7):
             xi += self.h_coeffs[f"h{i}"] * np.sin(2 * i * xi0) * np.cosh(2 * i * eta0)
             eta += self.h_coeffs[f"h{i}"] * np.cos(2 * i * xi0) * np.sinh(2 * i * eta0)
         return xi, eta
@@ -280,12 +291,18 @@ class TransverseMercator:
         E, N = proj_coordinates[:, 0], proj_coordinates[:, 1]
         height = proj_coordinates[:, 2] if proj_coordinates.shape[1] == 3 else None
 
-        # Define reverse series coefficients
+        # Define reverse series coefficients (Kruger's beta, Karney 2011 eq. 38, to n**6)
+        n = self.n
         h_prime_coeffs = {
-            "h1": self.n / 2 - (2 / 3) * self.n**2 + (37 / 96) * self.n**3 - (1 / 360) * self.n**4,
-            "h2": (1 / 48) * self.n**2 + (1 / 15) * self.n**3 - (437 / 1440) * self.n**4,
-            "h3": (17 / 480) * self.n**3 - (37 / 840) * self.n**4,
-            "h4": (4397 / 161280) * self.n**4
+            "h1": n / 2 - (2 / 3) * n**2 + (37 / 96) * n**3 - (1 / 360) * n**4
+                  - (81 / 512) * n**5 + (96199 / 604800) * n**6,
+            "h2": (1 / 48) * n**2 + (1 / 15) * n**3 - (437 / 1440) * n**4
+                  + (46 / 105) * n**5 - (1118711 / 3870720) * n**6,
+            "h3": (17 / 480) * n**3 - (37 / 840) * n**4
+                  - (209 / 4480) * n**5 + (5569 / 90720) * n**6,
+            "h4": (4397 / 161280) * n**4 - (11 / 504) * n**5 - (830251 / 7257600) * n**6,
+            "h5": (4583 / 161280) * n**5 - (108847 / 3991680) * n**6,
+            "h6": (20648693 / 638668800) * n**6,
         }
 
         # Compute eta_prime and xi_prime
@@ -298,26 +315,18 @@ class TransverseMercator:
         # Backward series expansion for xi0_prime and eta0_prime
         xi0_prime = xi_prime.copy()
         eta0_prime = eta_prime.copy()
-        for i in range(1, 5):
+        for i in range(1, 7):
             xi0_prime -= h_prime_coeffs[f"h{i}"] * np.sin(2 * i * xi_prime) * np.cosh(2 * i * eta_prime)
             eta0_prime -= h_prime_coeffs[f"h{i}"] * np.cos(2 * i * xi_prime) * np.sinh(2 * i * eta_prime)
 
-        # Compute beta_prime and Q_prime
+        # Compute beta_prime (the conformal latitude) and from it the geodetic latitude.
+        # The conversion is done with Newton's method on tan(latitude), which converges
+        # quadratically to double precision; a fixed-point iteration on the isometric
+        # latitude stalls around a few micrometres.
         beta_prime = np.arcsin(np.sin(xi0_prime) / np.cosh(eta0_prime))
-        Q_prime = np.arcsinh(np.tan(beta_prime))
+        lat = np.arctan(self._kruger.tauf(np.tan(beta_prime)))
 
-        # Iteratively compute Q_double_prime for latitude
-        e2 = self.f * (2 - self.f)
-        e = np.sqrt(e2)
-        Q_double_prime = Q_prime.copy()
-        while True:
-            Q_new = Q_prime + e * np.arctanh(e * np.tanh(Q_double_prime))
-            if np.max(np.abs(Q_new - Q_double_prime)) < 1e-12:
-                break
-            Q_double_prime = Q_new
-
-        # Compute latitude and longitude
-        lat = np.arctan(np.sinh(Q_double_prime))
+        # Compute longitude
         lon = self.lon_origin + np.arcsin(np.tanh(eta0_prime) / np.cos(beta_prime))
 
         # Combine into a single array and convert units if necessary

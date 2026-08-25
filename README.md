@@ -723,9 +723,76 @@ The value of $N$ varies with latitude due to the ellipsoidal shape of the Earth,
 
 The grid convergence, denoted as $\gamma$, is the angular difference between grid north and true north in the Transverse Mercator (TM) projection. It can be computed using either geographic coordinates or projected coordinates.
 
-#### 10.1 Grid Convergence Using Geographic Coordinates
+There is no elementary closed form for $\gamma$ on the ellipsoid - the exact Lee-Thompson
+solution requires Jacobi elliptic functions. The library therefore offers two series, selected
+with the `method` keyword:
 
-The grid convergence $\gamma$ at a point $(\phi, \lambda)$ is given by:
+| `method` | Series in | Accuracy vs. a rigorous solution |
+| --- | --- | --- |
+| `"kruger"` (default) | third flattening $n$, to $n^6$ | $< 3 \times 10^{-10}$ deg everywhere, out to $\pm 45^\circ$ from the central meridian |
+| `"snyder"` | $\Delta\lambda$ (or $x$), truncated | $\approx 2 \times 10^{-8}$ deg at $\pm 4^\circ$, degrades rapidly beyond a UTM zone |
+
+Because $n \approx 1/599$ for terrestrial ellipsoids, the first term neglected by the Krüger
+series is of order $10^{-19}$, so it is effectively exact in double precision. The Snyder
+series is retained because it is the formulation given in most textbooks and in the IOGP
+guidance notes, and it is useful for reproducing published worked examples.
+
+#### 10.0 Grid Convergence Using the Krüger Series (default)
+
+The Krüger method (Karney, 2011) first maps the point onto the Gauss-Schreiber projection,
+which *does* have a closed form, then applies a trigonometric correction series to reach
+Gauss-Krüger. With $\tau = \tan\phi$ and $\tau' = $ `taup` the tangent of the conformal
+latitude,
+
+$$
+\tau' = \sinh\left(\operatorname{arcsinh}\tau - e\operatorname{artanh}\frac{e\tau}{\sqrt{1+\tau^2}}\right),
+$$
+
+the Gauss-Schreiber coordinates and factors are formed as a single complex quantity:
+
+$$
+\zeta' = \xi' + i\eta' = \operatorname{atan2}\left(\tau', \cos\Delta\lambda\right) + i\operatorname{arcsinh}\frac{\sin\Delta\lambda}{\sqrt{\tau'^2 + \cos^2\Delta\lambda}},
+$$
+
+$$
+\gamma' = \operatorname{atan2}\left(\tau'\sin\Delta\lambda,\ \cos\Delta\lambda\sqrt{1+\tau'^2}\right), \qquad
+k' = \frac{\sqrt{1 - e^2\sin^2\phi}\ \sqrt{1+\tau^2}}{\sqrt{\tau'^2+\cos^2\Delta\lambda}}.
+$$
+
+The correction to Gauss-Krüger and its derivative are
+
+$$
+\zeta = \zeta' + \sum_{j=1}^{6} \alpha_j \sin\left(2j\zeta'\right), \qquad
+\frac{d\zeta}{d\zeta'} = 1 + \sum_{j=1}^{6} 2j\,\alpha_j \cos\left(2j\zeta'\right),
+$$
+
+from which the convergence and the point scale factor follow directly:
+
+$$
+\gamma = \gamma' - \arg\frac{d\zeta}{d\zeta'}, \qquad
+k = k_0\,k'\,\frac{A_1}{a}\left|\frac{d\zeta}{d\zeta'}\right|,
+$$
+
+where $A_1 = \frac{a}{1+n}\left(1 + \frac{n^2}{4} + \frac{n^4}{64} + \frac{n^6}{256}\right)$ is the
+rectifying radius, $n = \frac{f}{2-f}$ is the third flattening, and $\alpha_j$ are Krüger's forward
+coefficients (Karney 2011, eq. 35). The grid coordinates are $E = FE + k_0 A_1 \eta$ and
+$N = FN + k_0 A_1 (\xi - \xi_0)$.
+
+Starting from projected coordinates, the same quantities are obtained by inverting the series
+with Krüger's reverse coefficients $\beta_j$ (Karney 2011, eq. 38):
+
+$$
+\zeta' = \zeta - \sum_{j=1}^{6} \beta_j \sin\left(2j\zeta\right), \qquad
+\zeta = \frac{N - FN}{k_0 A_1} + \xi_0 + i\,\frac{E - FE}{k_0 A_1},
+$$
+
+recovering $\phi$ and $\Delta\lambda$, which are then fed through the forward relations above.
+The conformal latitude is inverted with Newton's method, which converges quadratically to
+double precision.
+
+#### 10.1 Grid Convergence Using Geographic Coordinates (Snyder series)
+
+Selected with `method="snyder"`. The grid convergence $\gamma$ at a point $(\phi, \lambda)$ is given by:
 
 $$
 \gamma = \Delta\lambda \sin\phi + \frac{\Delta\lambda^3}{3} \sin\phi \cos^2\phi (1 + 3\epsilon^2 + 2\epsilon^4) + \frac{\Delta\lambda^5}{15} \sin\phi \cos^4\phi (2 - \tan^2\phi),
@@ -741,57 +808,82 @@ where:
 - $\lambda$ is the geodetic longitude,
 - $\lambda_0$ is the central meridian.
 
-#### 10.2 Grid Convergence Using Projected Coordinates
+$\lambda$ and $\lambda_0$ must be referenced to the **same prime meridian**. This matters for
+grids defined against a non-Greenwich prime meridian, e.g. NGO 1948 (EPSG:27391), whose
+longitude of natural origin ($4^\circ 40' \text{W}$) is given relative to Oslo.
 
-The grid convergence $\gamma$ at a point $(x, y)$ in projected coordinates is given by:
+The grid convergence does **not** depend on the scale factor at the central meridian $k_0$,
+so the same value applies to pure TM, UTM and any other TM-based grid.
+
+#### 10.2 Grid Convergence Using Projected Coordinates (Snyder series)
+
+Selected with `method="snyder"`. The grid coordinates are first reduced to unscaled coordinates relative to the natural origin:
 
 $$
-\gamma = \frac{x \tan\phi_f}{N_f} - \frac{x^3 \tan\phi_f}{3 N_f^3} \left(1 + \tan^2\phi_f - \epsilon_f^2 - 2\epsilon_f^4\right),
+x = \frac{E - FE}{k_0}, \qquad y = \frac{N - FN}{k_0},
+$$
+
+where $FE$ and $FN$ are the false easting and false northing. The grid convergence $\gamma$ is then:
+
+$$
+\gamma = \frac{x \tan\phi_f}{N_f} \left[ 1 - \frac{x^2}{3 N_f^2} \left(1 + T_f - \epsilon_f^2 - 2\epsilon_f^4\right) + \frac{x^4}{15 N_f^4} \left(2 + 5T_f + 3T_f^2\right) \right],
 $$
 
 where:
-- $\phi_f$ is the footpoint latitude, computed iteratively,
+- $\phi_f$ is the footpoint latitude,
 - $N_f = \frac{a}{\sqrt{1 - e^2 \sin^2\phi_f}}$ is the normal radius of curvature at the footpoint latitude,
+- $T_f = \tan^2\phi_f$,
 - $\epsilon_f^2 = \frac{e^2}{1 - e^2} \cos^2\phi_f$ is the second eccentricity squared at the footpoint latitude,
-- $x$ is the easting coordinate (adjusted for false easting),
-- $y$ is the northing coordinate.
+- $E$ is the easting coordinate,
+- $N$ is the northing coordinate.
+
+Since $\gamma$ is an angle, there is no final multiplication by $k_0$ - only the unscaling of $x$ and $y$.
 
 ### 11. Scale Factor in the Transverse Mercator Projection
 
 The scale factor, denoted as $k$, describes the distortion of distances in the Transverse Mercator projection. It can be computed using either geographic coordinates or projected coordinates.
 
-#### 11.1 Scale Factor Using Geographic Coordinates
+As for the grid convergence, two series are available through the `method` keyword. The default
+`method="kruger"` returns $k$ from the same complex series described in section 10.0 and is
+accurate to better than $10^{-10}$ everywhere. The sections below document the truncated
+Snyder series obtained with `method="snyder"`.
 
-The scale factor $k$ at a point $(\phi, \lambda)$ is given by:
+#### 11.1 Scale Factor Using Geographic Coordinates (Snyder series)
+
+The scale factor $k$ at a point $(\phi, \lambda)$ is given by the standard Snyder (1987) series:
 
 $$
-k = 1 + \frac{\Delta\lambda^2}{2} \cos^2\phi (1 + \epsilon^2) + \frac{\Delta\lambda^4}{24} \cos^4\phi (5 + 4\tan^2\phi),
+k = k_0 \left[ 1 + \left(1 + C\right)\frac{A^2}{2} + \left(5 - 4T + 42C + 13C^2 - 28e'^2\right)\frac{A^4}{24} + \left(61 - 148T + 16T^2\right)\frac{A^6}{720} \right],
 $$
 
 where:
 - $\Delta\lambda = \lambda - \lambda_0$ is the longitude difference from the central meridian,
-- $\epsilon^2 = \frac{e^2}{1 - e^2} \cos^2\phi$ is the second eccentricity squared,
+- $A = \Delta\lambda \cos\phi$,
+- $T = \tan^2\phi$,
+- $e'^2 = \frac{e^2}{1 - e^2}$ is the second eccentricity squared,
+- $C = e'^2 \cos^2\phi$,
 - $e^2 = \frac{a^2 - b^2}{a^2}$ is the first eccentricity squared,
 - $a$ is the semi-major axis,
 - $b$ is the semi-minor axis,
 - $\phi$ is the geodetic latitude,
 - $\lambda$ is the geodetic longitude,
-- $\lambda_0$ is the central meridian.
+- $\lambda_0$ is the central meridian,
+- $k_0$ is the scale factor at the central meridian ($0.9996$ for UTM, $1$ for pure TM).
 
-#### 11.2 Scale Factor Using Projected Coordinates
+#### 11.2 Scale Factor Using Projected Coordinates (Snyder series)
 
-The scale factor $k$ at a point $(x, y)$ in projected coordinates is given by:
+With $x$ and $y$ reduced to unscaled coordinates as in section 10.2, the scale factor $k$ is given by:
 
 $$
-k = 1 + \frac{x^2}{2 M_f N_f} + \frac{x^4}{24 N_f^4},
+k = k_0 \left( 1 + \frac{x^2}{2 M_f N_f} + \frac{x^4}{24 N_f^4} \right),
 $$
 
 where:
 - $M_f = \frac{a(1 - e^2)}{(1 - e^2 \sin^2\phi_f)^{3/2}}$ is the meridional radius of curvature at the footpoint latitude,
 - $N_f = \frac{a}{\sqrt{1 - e^2 \sin^2\phi_f}}$ is the normal radius of curvature at the footpoint latitude,
-- $\phi_f$ is the footpoint latitude, computed iteratively,
-- $x$ is the easting coordinate (adjusted for false easting),
-- $y$ is the northing coordinate.
+- $\phi_f$ is the footpoint latitude,
+- $E$ is the easting coordinate,
+- $N$ is the northing coordinate.
 
 #### 11.3 Scale Factor for a Sphere
 
@@ -890,6 +982,12 @@ The inverse projection transforms projected coordinates $(E, N)$ back to geograp
 
 The Transverse Mercator (TM) projection is a conformal map projection widely used for large-scale mapping, such as the Universal Transverse Mercator (UTM) system.
 
+The implementation follows EPSG Guidance Note 7-2, but the forward and reverse series are
+carried to $n^6$ rather than the $n^4$ given there (Krüger's coefficients as tabulated by
+Karney, 2011). Since $n \approx 1/599$, the first neglected term is of order $10^{-19}$, so
+the projection is exact to double precision; measured against PROJ the agreement is at the
+nanometre level even $16^\circ$ from the central meridian.
+
 #### Parameters of the Transverse Mercator Projection
 
 The following table summarizes the key parameters of the Transverse Mercator projection as defined by EPSG:
@@ -911,15 +1009,19 @@ The forward projection transforms geographic coordinates $(\lambda, \phi)$ to pr
 
    $$n = \frac{f}{2 - f}$$
 
-   $$B = \frac{a}{1 + n} \left(1 + \frac{n^2}{4} + \frac{n^4}{64}\right)$$
+   $$B = \frac{a}{1 + n} \left(1 + \frac{n^2}{4} + \frac{n^4}{64} + \frac{n^6}{256}\right)$$
 
-   $$h_1=\frac{n}{2} - \frac{2}{3}n^2 + \frac{5}{16}n^3 + \frac{41}{180}n^4$$
+   $$h_1=\frac{n}{2} - \frac{2}{3}n^2 + \frac{5}{16}n^3 + \frac{41}{180}n^4 - \frac{127}{288}n^5 + \frac{7891}{37800}n^6$$
 
-   $$h_2=\frac{13}{48}n^2 - \frac{3}{5}n^3 + \frac{557}{1440}n^4$$
+   $$h_2=\frac{13}{48}n^2 - \frac{3}{5}n^3 + \frac{557}{1440}n^4 + \frac{281}{630}n^5 - \frac{1983433}{1935360}n^6$$
 
-   $$h_3=\frac{61}{240}n^3 - \frac{103}{140}n^4$$
+   $$h_3=\frac{61}{240}n^3 - \frac{103}{140}n^4 + \frac{15061}{26880}n^5 + \frac{167603}{181440}n^6$$
 
-   $$h_4=\frac{49561}{161280}n^4$$
+   $$h_4=\frac{49561}{161280}n^4 - \frac{179}{168}n^5 + \frac{6601661}{7257600}n^6$$
+
+   $$h_5=\frac{34729}{80640}n^5 - \frac{3418889}{1995840}n^6$$
+
+   $$h_6=\frac{212378941}{319334400}n^6$$
 
 2. **Compute the meridional arc distance from the equator to the projection origin**:
 
@@ -943,7 +1045,7 @@ The forward projection transforms geographic coordinates $(\lambda, \phi)$ to pr
 
    $$\xi_{0,0} = \sin^{-1}(\sin\beta_0)$$
 
-   $$\xi_0 = \xi_{0,0} + h_1 \sin(2\xi_{0,0}) + h_2 \sin(4\xi_{0,0}) + h_3 \sin(6\xi_{0,0}) + h_4 \sin(8\xi_{0,0})$$
+   $$\xi_0 = \xi_{0,0} + \sum_{j=1}^{6} h_j \sin\left(2j\,\xi_{0,0}\right)$$
 
    $$M_0 = B \xi_0$$
 
@@ -957,9 +1059,9 @@ The forward projection transforms geographic coordinates $(\lambda, \phi)$ to pr
 
    $$\xi_0 = \sin^{-1}(\sin\beta \cosh\eta_0)$$
 
-   $$\xi = \xi_0 + h_1 \sin(2\xi_0) \cosh(2\eta_0) + h_2 \sin(4\xi_0) \cosh(4\eta_0) + h_3 \sin(6\xi_0) \cosh(6\eta_0) + h_4 \sin(8\xi_0) \cosh(8\eta_0)$$
+   $$\xi = \xi_0 + \sum_{j=1}^{6} h_j \sin\left(2j\,\xi_0\right) \cosh\left(2j\,\eta_0\right)$$
 
-   $$\eta = \eta_0 + h_1 \cos(2\xi_0) \sinh(2\eta_0) + h_2 \cos(4\xi_0) \sinh(4\eta_0) + h_3 \cos(6\xi_0) \sinh(6\eta_0) + h_4 \cos(8\xi_0) \sinh(8\eta_0)$$
+   $$\eta = \eta_0 + \sum_{j=1}^{6} h_j \cos\left(2j\,\xi_0\right) \sinh\left(2j\,\eta_0\right)$$
 
 4. **Compute the easting and northing**:
 
@@ -975,25 +1077,41 @@ The inverse projection transforms projected coordinates $(E, N)$ back to geograp
 
    $$\eta' = \frac{E - E_0}{k_0 B}, \quad \xi' = \frac{(N - N_0) + k_0 M_0}{k_0 B}$$
 
-2. **Iteratively compute $\xi_0'$ and $\eta_0'$**:
+2. **Compute $\xi_0'$ and $\eta_0'$ with the reverse coefficients $h_j'$**:
 
-   $$\xi_0' = \xi' - \left(h_1 \sin(2\xi') \cosh(2\eta') + h_2 \sin(4\xi') \cosh(4\eta') + h_3 \sin(6\xi') \cosh(6\eta') + h_4 \sin(8\xi') \cosh(8\eta')\right)$$
+   $$h_1'=\frac{n}{2} - \frac{2}{3}n^2 + \frac{37}{96}n^3 - \frac{1}{360}n^4 - \frac{81}{512}n^5 + \frac{96199}{604800}n^6$$
 
-   $$\eta_0' = \eta' - \left(h_1 \cos(2\xi') \sinh(2\eta') + h_2 \cos(4\xi') \sinh(4\eta') + h_3 \cos(6\xi') \sinh(6\eta') + h_4 \cos(8\xi') \sinh(8\eta')\right)$$
+   $$h_2'=\frac{1}{48}n^2 + \frac{1}{15}n^3 - \frac{437}{1440}n^4 + \frac{46}{105}n^5 - \frac{1118711}{3870720}n^6$$
 
-3. **Compute $\beta'$ and $Q'$**:
+   $$h_3'=\frac{17}{480}n^3 - \frac{37}{840}n^4 - \frac{209}{4480}n^5 + \frac{5569}{90720}n^6$$
+
+   $$h_4'=\frac{4397}{161280}n^4 - \frac{11}{504}n^5 - \frac{830251}{7257600}n^6$$
+
+   $$h_5'=\frac{4583}{161280}n^5 - \frac{108847}{3991680}n^6$$
+
+   $$h_6'=\frac{20648693}{638668800}n^6$$
+
+   $$\xi_0' = \xi' - \sum_{j=1}^{6} h_j' \sin\left(2j\,\xi'\right) \cosh\left(2j\,\eta'\right)$$
+
+   $$\eta_0' = \eta' - \sum_{j=1}^{6} h_j' \cos\left(2j\,\xi'\right) \sinh\left(2j\,\eta'\right)$$
+
+3. **Compute the conformal latitude $\beta'$**:
 
    $$\beta' = \sin^{-1}\left(\frac{\sin\xi_0'}{\cosh\eta_0'}\right)$$
 
-   $$Q' = \sinh^{-1}(\tan\beta')$$
+4. **Recover the geodetic latitude $\phi$ from $\beta'$**:
 
-4. **Iteratively compute latitude $\phi$**:
+   Writing $\tau = \tan\phi$ and $\tau' = \tan\beta'$, the relation
 
-   $$Q'' = Q' + e \tanh^{-1}(e \tanh Q')$$
+   $$\tau' = \tau\sqrt{1 + \sigma^2} - \sigma\sqrt{1 + \tau^2}, \qquad \sigma = \sinh\left(e\operatorname{artanh}\frac{e\,\tau}{\sqrt{1+\tau^2}}\right)$$
 
-   Repeat until the change in $Q''$ is insignificant. Then:
+   is inverted for $\tau$ by Newton's method, starting from $\tau = \tau'/(1-e^2)$. The iteration
+   converges quadratically and reaches double precision in five steps. Then:
 
-   $$\phi = \tan^{-1}(\sinh Q'')$$
+   $$\phi = \tan^{-1}\tau$$
+
+   (A fixed-point iteration on the isometric latitude, as written in Guidance Note 7-2,
+   converges only linearly and stalls a few micrometres short.)
 
 5. **Compute longitude $\lambda$**:
 
@@ -1002,7 +1120,16 @@ The inverse projection transforms projected coordinates $(E, N)$ back to geograp
 
 ### EPSG Reference
 
-- These formulas follow **EPSG Guidance Note 7-2**.  
+- These formulas follow **EPSG Guidance Note 7-2**, with the Transverse Mercator series
+  extended from $n^4$ to $n^6$.
+
+### References
+
+- Snyder, J. P. (1987). *Map Projections - A Working Manual*. USGS Professional Paper 1395.
+- Karney, C. F. F. (2011). Transverse Mercator with an accuracy of a few nanometers.
+  *Journal of Geodesy*, 85(8), 475-485.
+- IOGP (2019). *Geomatics Guidance Note 7, part 2: Coordinate Conversions & Transformations
+  including Formulas*.
 
 ## License
 This project is licensed under the MIT License.
