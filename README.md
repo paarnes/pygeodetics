@@ -741,21 +741,21 @@ guidance notes, and it is useful for reproducing published worked examples.
 
 The Krüger method (Karney, 2011) first maps the point onto the Gauss-Schreiber projection,
 which *does* have a closed form, then applies a trigonometric correction series to reach
-Gauss-Krüger. With $\tau = \tan\phi$ and $\tau' = $ `taup` the tangent of the conformal
-latitude,
+Gauss-Krüger. Writing $\tau = \tan\phi$ for the tangent of the geodetic latitude and
+$\tau'$ for the tangent of the conformal latitude,
 
 $$
-\tau' = \sinh\left(\operatorname{arcsinh}\tau - e\operatorname{artanh}\frac{e\tau}{\sqrt{1+\tau^2}}\right),
+\tau' = \sinh\left(\sinh^{-1}\tau - e\,\tanh^{-1}\frac{e\tau}{\sqrt{1+\tau^2}}\right),
 $$
 
 the Gauss-Schreiber coordinates and factors are formed as a single complex quantity:
 
 $$
-\zeta' = \xi' + i\eta' = \operatorname{atan2}\left(\tau', \cos\Delta\lambda\right) + i\operatorname{arcsinh}\frac{\sin\Delta\lambda}{\sqrt{\tau'^2 + \cos^2\Delta\lambda}},
+\zeta' = \xi' + i\eta' = \mathrm{atan2}\left(\tau', \cos\Delta\lambda\right) + i\,\sinh^{-1}\frac{\sin\Delta\lambda}{\sqrt{\tau'^2 + \cos^2\Delta\lambda}},
 $$
 
 $$
-\gamma' = \operatorname{atan2}\left(\tau'\sin\Delta\lambda,\ \cos\Delta\lambda\sqrt{1+\tau'^2}\right), \qquad
+\gamma' = \mathrm{atan2}\left(\tau'\sin\Delta\lambda,\ \cos\Delta\lambda\sqrt{1+\tau'^2}\right), \qquad
 k' = \frac{\sqrt{1 - e^2\sin^2\phi}\ \sqrt{1+\tau^2}}{\sqrt{\tau'^2+\cos^2\Delta\lambda}}.
 $$
 
@@ -1103,7 +1103,7 @@ The inverse projection transforms projected coordinates $(E, N)$ back to geograp
 
    Writing $\tau = \tan\phi$ and $\tau' = \tan\beta'$, the relation
 
-   $$\tau' = \tau\sqrt{1 + \sigma^2} - \sigma\sqrt{1 + \tau^2}, \qquad \sigma = \sinh\left(e\operatorname{artanh}\frac{e\,\tau}{\sqrt{1+\tau^2}}\right)$$
+   $$\tau' = \tau\sqrt{1 + \sigma^2} - \sigma\sqrt{1 + \tau^2}, \qquad \sigma = \sinh\left(e\,\tanh^{-1}\frac{e\,\tau}{\sqrt{1+\tau^2}}\right)$$
 
    is inverted for $\tau$ by Newton's method, starting from $\tau = \tau'/(1-e^2)$. The iteration
    converges quadratically and reaches double precision in five steps. Then:
